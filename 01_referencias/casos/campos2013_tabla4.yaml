@@ -1,0 +1,57 @@
+# Caso de contraste (NO benchmark): ORC con R290 vs Kalina 84 % NH3, salmuera 100 °C, 200 kg/s.
+id: campos2013_tabla4
+cita: >-
+  Campos Rodríguez, C. E., Escobar Palacio, J. C., Venturini, O. J., Silva Lora, E. E., Melián
+  Cobas, V., Marques dos Santos, D., Lofrano Dotto, F. R., y Gialluca, V. (2013). Exergetic and
+  economic comparison of ORC and Kalina cycle for low temperature enhanced geothermal system in
+  Brazil. Applied Thermal Engineering, 52(1), 109-119.
+doi: 10.1016/j.applthermaleng.2012.11.012
+pdf: Papers/Exergetic_and_economic_comparison_of_ORC.pdf
+grupo: UNIFEI / NEST (Brasil)
+tipo: contraste de orden de magnitud; no reproducible punto a punto
+
+configuracion:
+  ciclo: ORC simple (vapor saturado a la entrada de la turbina)
+  modelo_fuente: F (salmuera; cierre por pinch y TTD)
+
+parametros:
+  T_fuente:    {valor: 100,  unidad: degC, origen: declarado, ref: "§7, p. 116"}
+  m_fuente:    {valor: 200,  unidad: kg/s, origen: declarado, ref: "§7, p. 116"}
+  fluido:      {valor: R290, coolprop: Propane, origen: declarado, ref: "Tabla 4, p. 117"}
+  dT_pinch:    {valor: 3,  unidad: K, origen: declarado, ref: "§3, p. 112", nota: al inicio de la evaporación}
+  TTD:         {valor: 10, unidad: K, origen: declarado, ref: "§3, p. 112", nota: T_fuente - T_entrada_turbina}
+  T_condensacion: {valor: 37, unidad: degC, origen: declarado, ref: "§3, p. 112"}
+  T_agua_enfriamiento: {valor: 25, unidad: degC, origen: declarado, ref: "Tabla 4, p. 117"}
+  eta_turbina: {valor: 0.85, origen: declarado, ref: "Tabla 4, p. 117"}
+  eta_bomba:   {valor: 0.80, origen: declarado, ref: "Tabla 4, p. 117"}
+  eta_generador: {valor: 0.95, origen: declarado, ref: "Ec. 15, p. 112"}
+  p_evaporacion: {valor: 2797, unidad: kPa, origen: declarado, ref: "Tabla 4, p. 117"}
+  p_condensacion: {valor: 1350, unidad: kPa, origen: declarado, ref: "Tabla 4, p. 117"}
+  propiedades_paper: Aspen-HYSYS con PRSV
+
+# Tabla 4, p. 117
+resultados_esperados:
+  ORC:    {W_kW: 1800, W_bomba_kW: 356, Q_evap_kW: 17027.78, eta_th_pct: 8.47, eta_ex_pct: 47.6, m_kg_s: 54.93}
+  Kalina: {x_NH3_masa: 0.84, W_kW: 1848, W_bomba_kW: 92, Q_evap_kW: 29333.89, eta_th_pct: 6, eta_ex_pct: 36.5,
+           p_evap_kPa: 2500, p_cond_kPa: 1200, m_kg_s: 34.75, m_vapor_kg_s: 22.45}
+  energia_anual_kWh: {ORC: 11552000, Kalina: 14048000, ref: "Tabla 6, p. 118", nota: "(W - W_bomba) × 8000 h"}
+
+verificacion_previa:
+  fecha: 2026-10-29
+  metodo: cálculo directo con CoolProp (Propane) a las p y el ṁ de la Tabla 4
+  resultados: {W_t_kW: 1424, W_bomba_kW: 211, Q_evap_kW: 17645, T_evap_degC: 74.0, T_cond_degC: 39.4}
+  conclusion: >-
+    No se reproduce: W_t -21 % y W_bomba -41 % frente a la tabla. Las presiones no cuadran con
+    los supuestos del texto: TTD = 10 K daría T_evap = 90 °C, no 74 °C; T_cond = 37 °C daría 1277 kPa,
+    no 1350. Hipótesis: la potencia de la Tabla 4 se escaló desde los casos de 1 kg/s (Fig. 5, R290 a
+    100 °C ≈ 9 kW × 200 = 1800 kW; Fig. 11c, Kalina 84 % ≈ 9,2 kW × 200 ≈ 1848 kW) y las demás
+    columnas vienen de otro punto de diseño.
+
+uso_recomendado:
+  - No usar como benchmark del ORC.
+  - Sirve para el orden de magnitud por kg/s de salmuera (≈ 9 kW por kg/s a 100 °C) y para el
+    contraste económico (LCOE 0,217 vs 0,178 €/kWh).
+
+faltantes:
+  - Estados punto a punto.
+  - T de salida de la salmuera (implícita: ≈ 79,7 °C ORC y ≈ 65 °C Kalina, derivada de Q/(m·4,2)).

@@ -1,0 +1,12 @@
+# PDFs con derechos de autor: no subir al remoto
+Papers/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Salidas regenerables
+logs/
+*.log

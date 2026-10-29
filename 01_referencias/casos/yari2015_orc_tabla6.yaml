@@ -1,0 +1,77 @@
+# Caso de referencia: ORC simple, agua caliente a 120 °C, 7 fluidos (máxima potencia neta).
+id: yari2015_orc_tabla6
+cita: >-
+  Yari, M., Mehr, A. S., Zare, V., Mahmoudi, S. M. S., y Rosen, M. A. (2015). Exergoeconomic
+  comparison of TLC (trilateral Rankine cycle), ORC (organic Rankine cycle) and Kalina cycle using
+  a low grade heat source. Energy, 83, 712-722.
+doi: 10.1016/j.energy.2015.02.080
+pdf: Papers/M. Yari.pdf
+grupo: Univ. Tabriz / UOIT (Irán-Canadá)
+matriz: B10
+tipo: benchmark contra modelo publicado (EES)
+
+configuracion:
+  ciclo: ORC simple, sin recuperador (evaporador, turbina, condensador, bomba)
+  estados: {1: salida del condensador, 2: salida de la bomba, 3: entrada a la turbina, 4: salida de la turbina}
+  modelo_fuente: F (agua líquida finita, cierre por pinch)
+  perdidas_presion: {valor: 0, origen: declarado, ref: "p. 714, §3.1"}
+
+parametros:
+  T0:          {valor: 25,      unidad: degC, origen: declarado, ref: "Tabla 1, p. 715"}
+  P0:          {valor: 101.325, unidad: kPa,  origen: declarado, ref: "Tabla 1, p. 715"}
+  T_fuente:    {valor: 120,     unidad: degC, origen: declarado, ref: "Tabla 1, p. 715"}
+  m_fuente:    {valor: 100,     unidad: kg/s, origen: declarado, ref: "Tabla 1, p. 715"}
+  fluido_fuente: {valor: agua, origen: declarado, ref: "§2.1, p. 713"}
+  P_fuente:
+    valor: 300
+    unidad: kPa
+    origen: supuesto
+    nota: no se declara; cualquier P que mantenga el agua líquida a 120 °C da el mismo h y s
+  dT_pinch_evaporador: {valor: 10, unidad: K, origen: declarado, ref: "Tabla 1, p. 715"}
+  ubicacion_pinch:
+    valor: punto de burbuja del fluido de trabajo
+    origen: supuesto
+    nota: no se declara; con este supuesto el caso se reproduce a ±0,3 %
+  T_condensacion: {valor: 40, unidad: degC, origen: declarado, ref: "pie de la Tabla 12, p. 720"}
+  estado_1: {valor: líquido saturado, origen: supuesto, nota: implícito en el esquema de la Fig. 1}
+  titulo_entrada_turbina: {valor: 1, origen: declarado, ref: "Tabla 1 (Q3 = 1 para ORC), p. 715"}
+  eta_turbina: {valor: 0.85, origen: declarado, ref: "Tabla 1, p. 715"}
+  eta_bomba:   {valor: 0.85, origen: declarado, ref: "Tabla 1, p. 715"}
+  eta_generador: {valor: 1.0, origen: supuesto, nota: no se menciona; W_net = W_t - W_p}
+
+definiciones:
+  W_net: W_t - W_p
+  eta_th: W_net / Q_in   (Q_in = calor del evaporador; Ec. 7, p. 714)
+  eta_ex: W_net / Ex_hs, Ex_hs = m_hs[(h_hs - h0) - T0 (s_hs - s0)] referida al estado muerto (Ecs. 8-9, p. 715)
+
+# Tabla 6, p. 719. T3 es la variable optimizada por el paper; aquí se fija como entrada.
+resultados_esperados:
+  - {fluido: R1234yf,  coolprop: R1234yf,   T3_degC: 84,    W_net_kW: 1816, eta_th_pct: 7.787, eta_ex_pct: 34.37}
+  - {fluido: n-butano, coolprop: n-Butane,  T3_degC: 76.32, W_net_kW: 1450, eta_th_pct: 7.72,  eta_ex_pct: 27.44}
+  - {fluido: "Isobutene (= isobutano, ver notas)", coolprop: IsoButane, T3_degC: 77.33, W_net_kW: 1479, eta_th_pct: 7.715, eta_ex_pct: 28}
+  - {fluido: propano,  coolprop: Propane,   T3_degC: 86.9,  W_net_kW: 1635, eta_th_pct: 8.318, eta_ex_pct: 30.95}
+  - {fluido: R134a,    coolprop: R134a,     T3_degC: 94.9,  W_net_kW: 1448, eta_th_pct: 9.19,  eta_ex_pct: 27.4}
+  - {fluido: R152a,    coolprop: R152a,     T3_degC: 77.77, W_net_kW: 1476, eta_th_pct: 7.806, eta_ex_pct: 27.94}
+  - {fluido: amoníaco, coolprop: Ammonia,   T3_degC: 75.53, W_net_kW: 1377, eta_th_pct: 7.883, eta_ex_pct: 26.07}
+tolerancia: por definir (D-07)
+
+verificacion_previa:
+  fecha: 2026-10-29
+  metodo: cálculo directo con CoolProp HEOS con los parámetros de arriba (no es el código del proyecto)
+  Ex_hs_kW: 5293
+  desviacion_W_net_pct: {R1234yf: -3.5, n-Butane: -0.1, IsoButane: -0.1, Propane: -0.1, R134a: -0.2, R152a: -0.3, Ammonia: -0.1}
+  desviacion_eta_ex_puntos: entre -0.07 y -0.12, salvo R1234yf (-1.25)
+  conclusion: >-
+    El caso se reproduce casi exacto: los supuestos (pinch en el punto de burbuja, T_cond = 40 °C,
+    líquido saturado en 1) son los del autor. La diferencia del R1234yf se atribuye a la ecuación
+    de estado de EES de 2015 frente a la actual (T3 = 84 °C está cerca de T_c = 94,7 °C).
+
+faltantes:
+  - Estados termodinámicos punto a punto (no se publican).
+  - Caudal de fluido de trabajo y T de salida de la fuente (se pueden derivar).
+
+notas:
+  - >-
+    "Isobutene" en el paper es casi seguro isobutano: con CoolProp IsoButane da -0,1 % y
+    Isobutene da -2,0 %. Además Campos (2013), citado por Yari, usa isobutano.
+  - Para R1234yf, propano y R134a la T3 de máxima potencia coincide con la de mínimo costo (Tabla 7).

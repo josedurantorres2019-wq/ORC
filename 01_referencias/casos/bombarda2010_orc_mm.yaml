@@ -1,0 +1,109 @@
+# Caso de referencia: ORC recuperado con MM, gases de escape de 2 motores Diesel a 346 °C.
+id: bombarda2010_orc_mm
+cita: >-
+  Bombarda, P., Invernizzi, C. M., y Pietra, C. (2010). Heat recovery from Diesel engines: A
+  thermodynamic comparison between Kalina and ORC cycles. Applied Thermal Engineering, 30(2-3),
+  212-219.
+doi: 10.1016/j.applthermaleng.2009.08.006
+pdf: Papers/BOMBARDA DIESEL ENGINES.pdf
+paginas: numeración del manuscrito aceptado (HAL hal-00521157), no la de la revista
+grupo: Politecnico di Milano / Univ. Brescia (Italia)
+matriz: B9
+tipo: benchmark contra modelo publicado (Aspen Plus, Peng-Robinson)
+
+configuracion:
+  ciclo: ORC recuperado
+  estados:
+    D: salida del condensador (líquido saturado)
+    E: salida de la bomba
+    F: salida del recuperador, lado frío
+    A: entrada a la turbina (vapor saturado)
+    B: salida de la turbina
+    C: salida del recuperador, lado caliente
+  modelo_fuente: F (gases finitos; cierre por LMTD, no por pinch)
+  perdidas_presion: {valor: 0, origen: declarado, ref: "§3.1, p. 17"}
+  intercambio_directo: {valor: true, origen: declarado, ref: "§3, p. 15", nota: sin aceite térmico intermedio}
+
+fluido_trabajo:
+  nombre: hexametildisiloxano (MM)
+  coolprop: MM
+  Tc_degC: {valor: 245.6, ref: "Tabla 1, p. 34"}
+  pc_bar:  {valor: 19.14, ref: "Tabla 1, p. 34"}
+  eos_del_paper: Peng-Robinson estándar (error medio de 2 % en p_sat; Tr 0,58-0,74)
+
+fuente:
+  m_gases:   {valor: 35,   unidad: kg/s, origen: declarado, ref: "§3, p. 15 (17,5 kg/s por motor)"}
+  T_gases:   {valor: 346,  unidad: degC, origen: declarado, ref: "§3, p. 15"}
+  composicion_molar: {N2: 0.746, O2: 0.117, H2O: 0.067, CO2: 0.059, Ar: 0.011, origen: declarado, ref: "§3, p. 15"}
+  Q_disponible_hasta_25C: {valor: 11460, unidad: kW, origen: declarado, ref: "§3, p. 15"}
+  cp_gases:
+    valor: null
+    origen: faltante
+    nota: >-
+      Aspen lo calcula con la composición. Comprobación: 11460 kW / (35 kg/s × 321 K) da un c_p
+      medio de 1,02 kJ/(kg·K) entre 25 y 346 °C (derivado).
+
+sumidero:
+  agua_entrada: {valor: 25, unidad: degC, origen: declarado, ref: "Tabla 3, p. 35"}
+  agua_salida:  {valor: 35, unidad: degC, origen: declarado, ref: "Tabla 3, p. 35"}
+  T_ambiente:   {valor: 25, unidad: degC, origen: declarado, ref: "§3, p. 15"}
+
+parametros:
+  LMTD_HRE:           {valor: 50, unidad: K, origen: declarado, ref: "Tabla 2, p. 34", nota: caso de referencia; se barre de 40 a 80}
+  LMTD_recuperador:   {valor: null, origen: faltante, nota: la Tabla 2 solo da valores para los recuperadores del Kalina (10-15 K)}
+  LMTD_condensador:   {valor: 10, unidad: K, origen: declarado, ref: "Tabla 2, p. 34"}
+  eta_turbina:        {valor: 0.75, origen: declarado, ref: "Tabla 3, p. 35"}
+  eta_bomba_hidraulica: {valor: 0.70, origen: declarado, ref: "Tabla 3, p. 35"}
+  eta_generador:      {valor: 0.96, origen: declarado, ref: "Tabla 3, p. 35"}
+  eta_motor_bomba:    {valor: 0.95, origen: declarado, ref: "Tabla 3, p. 35"}
+  p_evaporacion:      {valor: 9.74, unidad: bar, origen: declarado, ref: "Tabla 5, p. 37", nota: resultado de la optimización; aquí se usa como entrada}
+  p_condensacion:     {valor: 0.12, unidad: bar, origen: declarado, ref: "Tabla 5, p. 37"}
+  m_fluido:
+    valor: 25
+    unidad: kg/s
+    origen: derivado
+    nota: >-
+      El texto dice «≈ 26 kg/s» (lectura de la Fig. 8, p. 21). Con CoolProp, 25,0 kg/s da
+      exactamente los 1603 kW y además cuadra Q_rec/m = 178 kJ/kg. Usar 25 y anotar la diferencia.
+
+definiciones:
+  W_net: m·(h_A - h_B)·eta_gen - m·(h_E - h_D)/eta_motor   (convención derivada; reproduce 1603 kW)
+  eta_ciclo: W_net / Q_HRE
+  eta_recuperacion: W_net / 9258 kW   (calor disponible enfriando los gases hasta 100 °C; §4, p. 22)
+
+# Tabla 5, p. 37, y §3.2, p. 21
+resultados_esperados:
+  W_net_kW: 1603
+  eta_ciclo_pct: 21.5
+  eta_recuperacion_pct: 17.3
+  T_gases_salida_degC: 148.4
+  Q_HRE_kW: 7445
+  UA_HRE_kW_K: 148.9
+  Q_recuperador_kW: 4444
+  UA_recuperador_kW_K: 296.3
+  Q_condensador_kW: 5771
+  UA_condensador_kW_K: 577.1
+  dh_isentropico_turbina_kJ_kg: {valor: 92, ref: "§4, p. 24"}
+  barrido_LMTD_HRE: {50: "≈1600 kW", 75: "1400 kW", ref: "§4, p. 22 (resto solo en Fig. 10)"}
+tolerancia: por definir (D-07)
+
+verificacion_previa:
+  fecha: 2026-10-29
+  metodo: cálculo directo con CoolProp (MM, HEOS) a p_evap y p_cond fijas
+  T_evaporacion_degC: 203.3
+  T_condensacion_degC: 41.1
+  T_salida_turbina_degC: 151.6
+  dh_isentropico_kJ_kg: 91.8   # paper: 92
+  m_para_1603kW: 25.0
+  Q_HRE_sobre_m_kJ_kg: 297.9   # h_A - h_D = 476.1 → recuperador ≈ 178 kJ/kg = 4444 kW / 25 kg/s
+  conclusion: >-
+    El lado del fluido de trabajo se reproduce bien con CoolProp. Falta probar el lado de los
+    gases (c_p y LMTD) para obtener 148,4 °C y UA = 148,9 kW/K.
+
+faltantes:
+  - c_p de los gases (solo composición).
+  - LMTD o efectividad del recuperador del ORC.
+  - Estados punto a punto (solo diagramas T-s y T-Q, Figs. 7 y 9).
+
+notas:
+  - El Kalina del mismo paper (1615 kW, 100 bar) no es un KCS-11; no incluirlo como caso del ORC.
