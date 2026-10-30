@@ -11,8 +11,9 @@ Plan y justificación: bóveda, `04_PROJECTS/active/Ciclo ORC/` (D-01, D-03, D-0
   - **R:** convención del Kalina, para convalidar con él.
   - **F:** fuente finita con pinch, para el benchmark.
 - Fluidos (D-05): n-butano y R1234yf a 390–434 K; MM a 623,15 K.
-- **Fuera de esta etapa:** la comparación ORC–Kalina. Estas preguntas solo dejan listos los datos
-  que la comparación necesita, en el esquema de CSV común (D-09).
+- **Fuera de esta etapa:** la comparación ORC–Kalina. Aquí solo se asegura que el planteamiento
+  matemático sea paralelo al del Kalina (D-15). Los datos de la corrida de comparación se definen
+  más adelante, y las corridas de la campaña Kalina no se usan.
 
 Todas las preguntas están escritas para que la respuesta pueda ser «no». Las tolerancias se fijan
 aquí, **antes** de correr.
@@ -20,7 +21,7 @@ aquí, **antes** de correr.
 ## Preguntas
 
 ### P1 · Caso de diseño
-Con la fuente a 420 K en modo R y las entradas comunes del punto Kalina de referencia, ¿qué η_I,
+Con la fuente a 420 K en modo R y las entradas base de `definiciones.yaml`, ¿qué η_I,
 η_II, η/η_Carnot y w_net dan el n-butano y el R1234yf? ¿**Existe**, para cada uno, un punto que
 pase todos los filtros de D-07?
 
@@ -66,7 +67,7 @@ orden cambia con T_fuente?
   «no concluyente» de 0,4 a 0,7 pp del Kalina.
 
 ### P5 · Enunciado
-Con la fuente a 623,15 K, donde el Kalina no converge, ¿puede operar un ORC con MM respetando
+Con la fuente a 623,15 K del enunciado, ¿puede operar un ORC con MM respetando
 T3 ≤ 240 °C? ¿Con qué η_I y η_II? ¿Cuánto cambia si el límite es 300 °C?
 
 - **Maqueta de respuesta:** tabla con los dos límites. En modo F, perfil T–Q, siempre que D-08

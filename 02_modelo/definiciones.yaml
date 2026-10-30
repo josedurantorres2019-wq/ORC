@@ -41,43 +41,31 @@ fluidos:   # D-05
   R1234yf:  {coolprop: R1234yf, papel: contraste de T_c baja en 390-434 K}
   MM:       {coolprop: MM, papel: caso del enunciado 623.15 K}
 
-casos:   # D-03
-  comparacion:
+casos:   # D-03 (ajustada el 2026-10-30: sin datos de las corridas del Kalina)
+  diseno:
     T_fuente: {valor: 420.0, unidad: K, decision: D-03}
-    barrido_T_fuente: {inicio: 390.0, fin: 434.0, unidad: K, nota: mismo paso que el Kalina, decision: D-03}
+    barrido_T_fuente: {inicio: 390.0, fin: 434.0, unidad: K, decision: D-03}
     T_sumidero: {valor: 300.032917, unidad: K, decision: D-15 (H10)}
     fluidos: [n-butano, R1234yf]
     modo: R
-    punto_kalina_ancla:   # entradas comunes; solo T_fuente, T_sumidero, eta y eps_hrvg pasan al ORC
-      fuente: ciclo_kalina_tercero, rama test/barrido_final, commit c6fb1e1, resultados/2026-10-06_final_M2/m2n2_biseccion.csv (ruta B, T_fuente = 420, menor P_baja con KALINA)
-      T_fuente: 420.0
-      T_sumidero: 300.032917
-      P_alta: 3000.0
-      P_baja: 736.3636363636365
-      x_b: 0.5
-      m_b: 1.0
-      eta_t: 0.85
-      eta_p: 0.75
-      eps_hrvg: 0.85
-      eps_reg: 0.75
-      eps_cond: 0.8
-      resultado: {eta: 0.09150421068002437, Wnet: 45.9992356419883, q4: 0.935422089950717, B_verificado: true, fuera_rango: false}
   enunciado:
     T_fuente: {valor: 623.15, unidad: K, decision: D-03}
     fluidos: [MM]
     modos: [R, F]
     pendiente: D-08 (c_p de los gases y T_f2,min) para el modo F
+  comparacion_kalina:
+    estado: pendiente
+    nota: los datos de la corrida de comparacion se definen mas adelante; las corridas y anclas de la campana Kalina no se usan
   benchmarks:
     - {caso: 01_referencias/casos/yari2015_orc_tabla6.yaml, modo: F}
     - {caso: 01_referencias/casos/bombarda2010_orc_mm.yaml, modo: F, recuperador: encendido}
 
-entradas_modo_R:   # iguales a las del punto Kalina ancla (D-15 §4.2, criterio 1)
-  eta_t: {valor: 0.85, fuente: punto Kalina ancla, decision: D-15 (H5)}
-  eta_p: {valor: 0.75, fuente: punto Kalina ancla, decision: D-15 (H5)}
-  eps_ev: {valor: 0.85, fuente: punto Kalina ancla (eps_hrvg), decision: D-07}
+entradas_modo_R:   # valores base; la corrida de comparacion fijara los suyos
+  eta_t: {valor: 0.85, fuente: valor por defecto del modelo Kalina (CONTEXT.md), decision: D-15 (H5)}
+  eta_p: {valor: 0.75, fuente: valor por defecto del modelo Kalina (CONTEXT.md), decision: D-15 (H5)}
+  eps_ev: {valor: 0.85, fuente: valor por defecto de eps_HRVG del modelo Kalina (CONTEXT.md), decision: D-07}
   eps_rec: {valor: null, nota: recuperador apagado}
   m: {valor: 1.0, unidad: kg/s, decision: D-15 (H13)}
-  rango_eta_eps_confiable: {valor: [0.40, 0.95], fuente: criterio «KALINA confiable» de la campana Kalina, decision: D-07}
 
 umbrales:   # D-07
   x4_min:
@@ -104,8 +92,8 @@ umbrales:   # D-07
     nota: el rango 8-20 K se trata como limitacion, no como filtro
   cavitacion_O2:
     regla: T_sat(P_cd) > T_amb_max
-    T_amb_max: {valor: 303.55, unidad: K, fuente: regla O2 del Kalina}
-    margen_sensibilidad: {valor: 2.0, unidad: K, fuente: campana Kalina 6.1}
+    T_amb_max: {valor: 303.55, unidad: K, fuente: regla O2 del modelo Kalina (src/restricciones/operativos.py)}
+    margen_sensibilidad: {valor: 2.0, unidad: K, estado: propuesta}
     estado: verificado
   dT_pp_ev: {valor: 10.0, unidad: K, sensibilidad: [3.0, 10.0], fuente: Yari 2015 (10 K); tesis Campos 2014 (3-6 C), estado: verificado, aplica: modo F}
   dT_pp_cd: {valor: 10.0, unidad: K, sensibilidad: [5.0, 15.0], fuente: Vera 2018; Bombarda 2010 (LMTD), estado: verificado, aplica: modo F}
