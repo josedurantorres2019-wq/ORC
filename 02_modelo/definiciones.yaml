@@ -1,0 +1,131 @@
+# Definiciones del modelo ORC — v1 (F1). Fuente única de valores para el código.
+# Cada valor lleva:
+#   - fuente: de dónde sale el valor;
+#   - decision: la decisión de la bóveda que lo fija (04_PROJECTS/active/Ciclo ORC/decisiones/);
+#   - estado: «verificado» (leído en la fuente), «propuesta» (elegido por el proyecto, sin fuente
+#     externa) o «NV» (fuente no verificada: va a la sensibilidad).
+version: 1
+fecha: 2026-10-30
+estado_documento: borrador v1; se congela en G2
+
+unidades: {T: K, P: kPa, h: kJ/kg, s: kJ/(kg*K), m: kg/s, potencia: kW}   # las mismas del Kalina
+
+modelo:
+  ciclo: {valor: ORC subcritico simple, decision: D-14}
+  recuperador: {valor: apagado, nota: se enciende solo para el caso bombarda2010_orc_mm, decision: D-14}
+  modos:
+    R: {uso: convalidacion con el Kalina (reservorios, eps_ev, m = 1 kg/s), decision: D-15}
+    F: {uso: benchmark y valores absolutos (fuente finita, pinch con perfil T-Q), decision: D-15}
+  condensador_modo_R:
+    valor: liquido saturado a P_cd = P_sat(T_sumidero + dT_cd); eps_cd_eq es un resultado, no una entrada
+    fuente: comprobacion con CoolProp (eps_cond = 0.80 deja bifasico en la bomba)
+    decision: D-15
+  propiedades: {valor: CoolProp 8.0.0 HEOS, decision: D-15 (H6)}
+  potencia_neta: {valor: W_net = W_t - W_p (en el eje, sin generador), decision: D-15 (H11)}
+  eta_generador_informativo: {valor: 0.96, fuente: Bombarda 2010; Vera 2018, uso: solo W_el, decision: D-15 (H11)}
+
+hipotesis:   # H1-H16, detalle en plan/MODELO_MATEMATICO_ORC_2026-10-30.md §3
+  regimen: estacionario
+  componentes: adiabaticos
+  perdidas_presion: {valor: 0, decision: D-13 (cerrada por D-15), nota: limitacion declarada}
+  energia_cinetica_potencial: despreciable
+  sentido_intercambiadores: contracorriente
+  exergia: {valor: solo fisica, decision: D-15 (H14)}
+
+estado_muerto:
+  T0: {valor: 300.032917, unidad: K, fuente: CONTEXT.md del Kalina (media horaria de T ambiente), estado: verificado}
+  P0: {valor: 101.325, unidad: kPa, fuente: CONTEXT.md del Kalina (supuesto declarado alli), estado: verificado}
+
+fluidos:   # D-05
+  n-butano: {coolprop: n-Butane, papel: principal en 390-434 K}
+  R1234yf:  {coolprop: R1234yf, papel: contraste de T_c baja en 390-434 K}
+  MM:       {coolprop: MM, papel: caso del enunciado 623.15 K}
+
+casos:   # D-03
+  comparacion:
+    T_fuente: {valor: 420.0, unidad: K, decision: D-03}
+    barrido_T_fuente: {inicio: 390.0, fin: 434.0, unidad: K, nota: mismo paso que el Kalina, decision: D-03}
+    T_sumidero: {valor: 300.032917, unidad: K, decision: D-15 (H10)}
+    fluidos: [n-butano, R1234yf]
+    modo: R
+    punto_kalina_ancla:   # entradas comunes; solo T_fuente, T_sumidero, eta y eps_hrvg pasan al ORC
+      fuente: ciclo_kalina_tercero, rama test/barrido_final, commit c6fb1e1, resultados/2026-10-06_final_M2/m2n2_biseccion.csv (ruta B, T_fuente = 420, menor P_baja con KALINA)
+      T_fuente: 420.0
+      T_sumidero: 300.032917
+      P_alta: 3000.0
+      P_baja: 736.3636363636365
+      x_b: 0.5
+      m_b: 1.0
+      eta_t: 0.85
+      eta_p: 0.75
+      eps_hrvg: 0.85
+      eps_reg: 0.75
+      eps_cond: 0.8
+      resultado: {eta: 0.09150421068002437, Wnet: 45.9992356419883, q4: 0.935422089950717, B_verificado: true, fuera_rango: false}
+  enunciado:
+    T_fuente: {valor: 623.15, unidad: K, decision: D-03}
+    fluidos: [MM]
+    modos: [R, F]
+    pendiente: D-08 (c_p de los gases y T_f2,min) para el modo F
+  benchmarks:
+    - {caso: 01_referencias/casos/yari2015_orc_tabla6.yaml, modo: F}
+    - {caso: 01_referencias/casos/bombarda2010_orc_mm.yaml, modo: F, recuperador: encendido}
+
+entradas_modo_R:   # iguales a las del punto Kalina ancla (D-15 §4.2, criterio 1)
+  eta_t: {valor: 0.85, fuente: punto Kalina ancla, decision: D-15 (H5)}
+  eta_p: {valor: 0.75, fuente: punto Kalina ancla, decision: D-15 (H5)}
+  eps_ev: {valor: 0.85, fuente: punto Kalina ancla (eps_hrvg), decision: D-07}
+  eps_rec: {valor: null, nota: recuperador apagado}
+  m: {valor: 1.0, unidad: kg/s, decision: D-15 (H13)}
+  rango_eta_eps_confiable: {valor: [0.40, 0.95], fuente: criterio «KALINA confiable» de la campana Kalina, decision: D-07}
+
+umbrales:   # D-07
+  x4_min:
+    valor: 0.90
+    sensibilidad: [0.85]
+    fuente: Kalina O1 (0.90); Campos 2013 (0.9); tesis Campos 2014 (0.85)
+    estado: verificado
+    aplica: solo si x4 < 1
+  x3_min: {valor: 1.0, fuente: D-15 §2.6; las 5 fuentes usan vapor saturado, estado: verificado}
+  dT_sh: {valor: 0.0, unidad: K, sensibilidad: [0.0, 10.0], fuente: las 5 fuentes; tesis Campos 2014, estado: verificado, aplica: modo F}
+  dT_cd:
+    valor: 10.0
+    unidad: K
+    sensibilidad: [5.0, 15.0]
+    fuente: Vera 2018 (dT 10 C); Bombarda 2010 (LMTD 10-15 C); Yari y Campos condensan 12-15 K sobre T0
+    estado: verificado
+    aplica: modo R
+  dT_sc:
+    valor: 0.0
+    unidad: K
+    sensibilidad: [8.0, 20.0]
+    fuente: Yari, Campos y Vera (liquido saturado); NPSH de 8-20 K segun la bomba
+    estado: verificado
+    nota: el rango 8-20 K se trata como limitacion, no como filtro
+  cavitacion_O2:
+    regla: T_sat(P_cd) > T_amb_max
+    T_amb_max: {valor: 303.55, unidad: K, fuente: regla O2 del Kalina}
+    margen_sensibilidad: {valor: 2.0, unidad: K, fuente: campana Kalina 6.1}
+    estado: verificado
+  dT_pp_ev: {valor: 10.0, unidad: K, sensibilidad: [3.0, 10.0], fuente: Yari 2015 (10 K); tesis Campos 2014 (3-6 C), estado: verificado, aplica: modo F}
+  dT_pp_cd: {valor: 10.0, unidad: K, sensibilidad: [5.0, 15.0], fuente: Vera 2018; Bombarda 2010 (LMTD), estado: verificado, aplica: modo F}
+  f_Pcrit:
+    valor: 0.90
+    sensibilidad: [0.80, 0.95]
+    fuente: sin fuente primaria; Drescher y Bruggemann 2007 (P_c - 0.1 MPa) solo por fuente secundaria
+    estado: NV
+    pendiente: buscar fuente primaria antes de G3a
+  T3_max_MM:
+    valor: 513.15
+    unidad: K
+    sensibilidad: [573.15]
+    fuente: Keulen et al. 2018, Energy 165 (240 C); Preissinger y Bruggemann 2016, Energies 9(3) (300 C)
+    estado: verificado (solo resumenes)
+  T3_max_otros: {valor: null, nota: no se impone; en la ventana T3 <= ~413 K, estado: NV}
+  P_cd_min: {valor: null, nota: no se impone; MM condensa en vacio como en Bombarda}
+
+tolerancias:   # D-01, fijadas antes de correr
+  balance_energia_rel: {valor: 1.0e-3, fuente: criterio N2 del Kalina}
+  cierre_exergia_rel: {valor: 1.0e-3, fuente: criterio N2 del Kalina, aplicado a Ex_Qin}
+  benchmark_Wnet_rel: {valor: 0.01, estado: propuesta, decision: D-01 (P2)}
+  diferencia_eta_II_fluidos: {valor: 0.005, estado: propuesta, fuente: banda no concluyente del Kalina (0.4-0.7 pp), decision: D-01 (P4)}
