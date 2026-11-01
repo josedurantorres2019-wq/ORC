@@ -1,0 +1,101 @@
+{ ORC subcritico simple, modo R, cierre B del condensador (D-15, D-16).
+  Programa para EES: copiar todo este texto en la ventana Equations y resolver (F2).
+  Plan de verificacion, niveles V2-V3. Las entradas de cada punto estan en
+  03_verificacion/entradas_puntos.csv (las mismas que usa el codigo Python).
+
+  EES resuelve todas las ecuaciones a la vez: el lazo en h1 (condensador) y el del
+  recuperador quedan implicitos. Por eso es una comprobacion independiente del metodo
+  numerico del Python (sustitucion sucesiva).
+
+  CUIDADOS
+  - Estado de referencia: EES y CoolProp pueden tener otro cero de h y s. Comparar
+    diferencias (Q, W, dh_s, eta, T, x), nunca h absoluta.
+  - Nombres de fluido [no verificados en tu version de EES]: 'n-Butane', 'R1234yf',
+    'Isobutane', 'Propane', 'R134a', 'R152a', 'Ammonia', 'Steam_IAPWS' (agua IAPWS-95,
+    la misma formulacion que CoolProp). MM: buscar en Options > Function Info > Fluid
+    Properties si existe; si no existe, VP-06 queda sin EES.
+  - Si no converge: Options > Variable Info, poner valores iniciales razonables
+    (T[1] cerca de T_sat(P_cd), T[3] cerca de T_sat(P_ev)) y limites inferiores > 0.
+  - Recuperador apagado: eps_rec = 0 (en el CSV la celda vacia significa apagado).
+}
+
+$UnitSystem SI Mass K kPa kJ
+
+{ ===== Entradas: una fila de entradas_puntos.csv (aqui VP-03, Yari n-butano) ===== }
+F$ = 'n-Butane'
+P_ev = 933.1670883184327         { kPa }
+P_cd = 378.4851605636715         { kPa }
+T_fuente = 393.15                { K }
+T_sumidero = 298.15              { K }
+eps_ev = 0.8008215854184288
+eps_cond = 0.9070711258289312
+eps_rec = 0                      { celda vacia del CSV = 0 }
+eta_t = 0.85
+eta_p = 0.85
+m = 47.61630878078749            { kg/s }
+T0 = 300.032917                  { K, estado muerto de definiciones.yaml }
+P0 = 101.325                     { kPa }
+
+{ ===== Condensador (cierre B): estado 1 sale de eps_cond ===== }
+h_1min = Enthalpy(F$, P=P_cd, T=T_sumidero)
+h[1] = h_4r - eps_cond*(h_4r - h_1min)
+T[1] = Temperature(F$, P=P_cd, h=h[1])
+s[1] = Entropy(F$, P=P_cd, h=h[1])
+
+{ ===== Bomba ===== }
+h_2s = Enthalpy(F$, P=P_ev, s=s[1])
+h[2] = h[1] + (h_2s - h[1])/eta_p
+T[2] = Temperature(F$, P=P_ev, h=h[2])
+s[2] = Entropy(F$, P=P_ev, h=h[2])
+
+{ ===== Recuperador (q_max del lado que limita, como recuperador.py) ===== }
+q_max = Min(h[4] - Enthalpy(F$, P=P_cd, T=T[2]), Enthalpy(F$, P=P_ev, T=T[4]) - h[2])
+q_rec = eps_rec*q_max
+h_2r = h[2] + q_rec
+h_4r = h[4] - q_rec
+s_2r = Entropy(F$, P=P_ev, h=h_2r)
+s_4r = Entropy(F$, P=P_cd, h=h_4r)
+
+{ ===== Evaporador (efectividad sobre el lado del fluido, como eps_HRVG del Kalina) ===== }
+h_3max = Enthalpy(F$, P=P_ev, T=T_fuente)
+h[3] = h_2r + eps_ev*(h_3max - h_2r)
+T[3] = Temperature(F$, P=P_ev, h=h[3])
+s[3] = Entropy(F$, P=P_ev, h=h[3])
+
+{ ===== Turbina ===== }
+h_4s = Enthalpy(F$, P=P_cd, s=s[3])
+h[4] = h[3] - eta_t*(h[3] - h_4s)
+T[4] = Temperature(F$, P=P_cd, h=h[4])
+s[4] = Entropy(F$, P=P_cd, h=h[4])
+x[4] = Quality(F$, P=P_cd, h=h[4])       { -100/100 fuera de la campana en EES }
+
+{ ===== Globales (las mismas definiciones de cycle_solver.py) ===== }
+Q_in = m*(h[3] - h_2r)
+Q_out = m*(h_4r - h[1])
+Q_rec = m*q_rec
+W_t = m*(h[3] - h[4])
+W_p = m*(h[2] - h[1])
+W_net = W_t - W_p
+eta = W_net/Q_in
+dh_s = h[3] - h_4s
+r_bw = W_p/W_t
+N2 = abs(Q_in - Q_out - W_net)/Q_in
+
+{ ===== Exergia (las mismas definiciones de exergy.py) ===== }
+Sgen_ev = m*(s[3] - s_2r) - Q_in/T_fuente
+Sgen_t = m*(s[4] - s[3])
+Sgen_rec = m*((s_4r - s[4]) + (s_2r - s[2]))
+Sgen_cd = m*(s[1] - s_4r) + Q_out/T_sumidero
+Sgen_p = m*(s[2] - s[1])
+Ed_ev = T0*Sgen_ev
+Ed_t = T0*Sgen_t
+Ed_rec = T0*Sgen_rec
+Ed_cd = T0*Sgen_cd
+Ed_p = T0*Sgen_p
+Ex_Qin = Q_in*(1 - T0/T_fuente)
+eta_II = W_net/Ex_Qin
+
+{ PARA TODOS LOS PUNTOS: Tables > New Parametric Table con las columnas de entrada
+  (F$ no puede ir en la tabla: hacer una tabla por fluido, o copiar el programa por fluido).
+  Borrar de arriba las lineas de las entradas que van en la tabla. Resolver con F3 y
+  exportar la tabla a CSV con las columnas de 03_verificacion/README.md. }

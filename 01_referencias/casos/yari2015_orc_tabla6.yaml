@@ -75,3 +75,67 @@ notas:
     "Isobutene" en el paper es casi seguro isobutano: con CoolProp IsoButane da -0,1 % y
     Isobutene da -2,0 %. Además Campos (2013), citado por Yari, usa isobutano.
   - Para R1234yf, propano y R134a la T3 de máxima potencia coincide con la de mínimo costo (Tabla 7).
+
+# Bloque que lee scripts/comparar_verificacion.py (plan de verificación, 2026-11-01).
+# Mapeo a modo R (V-B): T_fuente = agua a 120 °C, T_sumidero = T0 = 25 °C; las ε salen de los
+# estados. ṁ del fluido por el pinch del paper (V-A, solo en el script). Tolerancias: V-D, §7
+# del plan (Yari: ±0,5 % en Ẇ, ±0,1 pp en η_th). La causa del R1234yf viene de la
+# verificación previa del 2026-10-29 (EoS de EES 2015 cerca de T_c).
+verificacion:
+  - &yari
+    id_punto: VP-03
+    fluido: n-Butane
+    T_fuente_degC: 120
+    T_sumidero_degC: 25
+    P_ev: {T_sat_degC: 76.32}
+    P_cd: {T_sat_degC: 40}
+    estado_3: {q: 1}
+    estado_1: {q: 0}
+    eta_t: 0.85
+    eta_p: 0.85
+    m: {pinch: {m_fuente: 100, T_fuente_degC: 120, P_fuente_kPa: 300, dT_pinch: 10}}
+    comparar:
+      - {variable: eta, valor_ref: 0.0772, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
+      - {variable: Wnet, valor_ref: 1450, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719"}
+  - <<: *yari
+    id_punto: VP-04
+    fluido: R1234yf
+    P_ev: {T_sat_degC: 84}
+    comparar:
+      - {variable: eta, valor_ref: 0.07787, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719", causa: "EoS de EES 2015 frente a CoolProp cerca de T_c (94,7 °C); verificación previa 2026-10-29"}
+      - {variable: Wnet, valor_ref: 1816, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719", causa: "EoS de EES 2015 frente a CoolProp cerca de T_c (94,7 °C); verificación previa 2026-10-29 (−3,5 %)"}
+  - <<: *yari
+    id_punto: VP-C-isobutano
+    fluido: IsoButane
+    P_ev: {T_sat_degC: 77.33}
+    comparar:
+      - {variable: eta, valor_ref: 0.07715, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
+      - {variable: Wnet, valor_ref: 1479, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719"}
+  - <<: *yari
+    id_punto: VP-C-propano
+    fluido: Propane
+    P_ev: {T_sat_degC: 86.9}
+    comparar:
+      - {variable: eta, valor_ref: 0.08318, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
+      - {variable: Wnet, valor_ref: 1635, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719"}
+  - <<: *yari
+    id_punto: VP-C-R134a
+    fluido: R134a
+    P_ev: {T_sat_degC: 94.9}
+    comparar:
+      - {variable: eta, valor_ref: 0.0919, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
+      - {variable: Wnet, valor_ref: 1448, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719"}
+  - <<: *yari
+    id_punto: VP-C-R152a
+    fluido: R152a
+    P_ev: {T_sat_degC: 77.77}
+    comparar:
+      - {variable: eta, valor_ref: 0.07806, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
+      - {variable: Wnet, valor_ref: 1476, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719"}
+  - <<: *yari
+    id_punto: VP-C-amoniaco
+    fluido: Ammonia
+    P_ev: {T_sat_degC: 75.53}
+    comparar:
+      - {variable: eta, valor_ref: 0.07883, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
+      - {variable: Wnet, valor_ref: 1377, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719"}

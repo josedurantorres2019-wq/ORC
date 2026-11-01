@@ -1,0 +1,26 @@
+# Puntos del plan de verificación (bóveda: 04_PROJECTS/active/Ciclo ORC/plan/PLAN_VERIFICACION_ORC_2026-10-31.md).
+# Los que tienen dato publicado están en el YAML de su caso (bloque `verificacion`).
+# VP-07…VP-12 no tienen dato publicado: solo sirven para comparar Python, EES y DWSIM entre sí.
+con_dato_publicado:
+  VP-01: cengel_cap10.yaml            # agua, Ej. 10-1
+  VP-02: cengel_cap10.yaml            # agua, Ej. 10-2 (solo bomba y turbina: tiene ΔP)
+  VP-03: yari2015_orc_tabla6.yaml     # n-butano
+  VP-04: yari2015_orc_tabla6.yaml     # R1234yf
+  VP-05: cengel_cap10.yaml            # isobutano, Prob. 10-29
+  VP-06: bombarda2010_orc_mm.yaml     # MM con recuperador
+  VP-13: campos2014_nbutano.yaml      # n-butano
+  controles: yari2015_orc_tabla6.yaml # VP-C-*: isobutano, propano, R134a, R152a, amoníaco
+
+# Regla V-C (aprobada el 2026-10-31): las presiones se calculan con CoolProp al correr.
+regla_V-C:
+  P_cd: "P_sat(T_sumidero + dT_cd), con dT_cd = 10 K (D-07)"
+  P_ev: "fraccion_Pc · P_crit"
+  eps_cond: la que deja el estado 1 en líquido saturado a P_cd
+  resto: entradas_modo_R de definiciones.yaml
+sin_dato_publicado:
+  VP-07: {fluido: n-butano, caso: diseno,    fraccion_Pc: 0.5}
+  VP-08: {fluido: n-butano, caso: diseno,    fraccion_Pc: 0.8}
+  VP-09: {fluido: R1234yf,  caso: diseno,    fraccion_Pc: 0.5}
+  VP-10: {fluido: R1234yf,  caso: diseno,    fraccion_Pc: 0.8}
+  VP-11: {fluido: MM,       caso: enunciado, fraccion_Pc: 0.5}
+  VP-12: {fluido: MM,       caso: enunciado, fraccion_Pc: 0.8}

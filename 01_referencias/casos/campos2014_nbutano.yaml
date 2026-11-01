@@ -1,0 +1,42 @@
+# Punto único de n-butano de la tesis de Campos Rodríguez (2014), UNIFEI (en portugués).
+id: campos2014_nbutano
+cita: >-
+  Campos Rodríguez, C. E. (2014). Tesis doctoral, Universidade Federal de Itajubá (UNIFEI):
+  análisis ORC frente a Kalina para sistemas geotérmicos mejorados de baja temperatura en Brasil.
+pdf: Papers/Tese_CamposRodriguez_2014_UNIFEI_ORC-vs-Kalina-EGS-Brasil.pdf
+paginas: numeración impresa (entre paréntesis, la del PDF)
+tipo: contraste con modelo publicado (Aspen-HYSYS 7.0, PRSV); pesa menos que Yari
+
+parametros:
+  m_fuente:       {valor: 1,    unidad: kg/s, origen: declarado, ref: "§4.2, p. 54 (PDF 60)"}
+  T_ambiente:     {valor: 25,   unidad: degC, origen: declarado, ref: "§4.2, p. 54"}
+  T_condensacion: {valor: 37,   unidad: degC, origen: declarado, ref: "§4.2, p. 54"}
+  eta_bomba:      {valor: 0.80, origen: declarado, ref: "§4.2, p. 54 (moto-bomba)"}
+  eta_turbina:    {valor: 0.85, origen: declarado, ref: "§4.2, p. 54 (turbo-gerador)"}
+  T_fuente:       {valor: 140,  unidad: degC, origen: declarado, ref: "p. 69 (PDF 75)"}
+  P_vaporizacion: {valor: 1263, unidad: kPa, origen: declarado, ref: "p. 69 (PDF 75)"}
+  dT_pinch:       {valor: 3,    unidad: K, origen: declarado, ref: "p. 69 (PDF 75)"}
+  sobrecalentamiento: {valor: 0, origen: declarado, ref: "p. 69, sin sobrecalentamiento del vapor"}
+  ubicacion_pinch: {valor: inicio de la evaporación, origen: declarado, ref: "§4.2: evaporador dividido en precalentador y evaporador para ubicar el pinch"}
+  P_fuente:       {valor: 500,  unidad: kPa, origen: supuesto, nota: mantiene líquida la salmuera a 140 °C}
+  estado_1:       {valor: líquido saturado, origen: supuesto}
+
+resultados_esperados:
+  W_kW: {valor: 32, ref: "p. 69 (PDF 75)", nota: "potencia máxima de 32 kW; el texto no dice si es neta o de turbina"}
+
+# Bloque que lee scripts/comparar_verificacion.py. Tolerancia fijada antes de correr, igual a la
+# de Bombarda (otro programa y otra EoS): ±2 %. Campos no estaba en el §7 del plan.
+verificacion:
+  - id_punto: VP-13
+    fluido: n-Butane
+    T_fuente_degC: 140
+    T_sumidero_degC: 25
+    P_ev: {kPa: 1263}
+    P_cd: {T_sat_degC: 37}
+    estado_3: {q: 1}
+    estado_1: {q: 0}
+    eta_t: 0.85
+    eta_p: 0.80
+    m: {pinch: {m_fuente: 1, T_fuente_degC: 140, P_fuente_kPa: 500, dT_pinch: 3}}
+    comparar:
+      - {variable: Wnet, valor_ref: 32, unidad: kW, tolerancia: 0.02, tipo: rel, referencia: "Campos 2014, p. 69 (PDF 75)", causa: "la tesis escribe «potência líquida» cuando es la neta (Figs. 4.6, 4.8, 4.16, 4.24), pero la frase de los 32 kW y la Fig. 4.11 dicen solo «produção de potência»; los 32 kW coinciden con la potencia de turbina del código (W_t = 32,47 kW, +1,5 %), no con la neta (31,00 kW). Causa hallada tras la primera corrida, 2026-11-01"}

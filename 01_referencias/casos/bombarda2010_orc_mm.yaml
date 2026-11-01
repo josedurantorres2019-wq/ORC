@@ -107,3 +107,29 @@ faltantes:
 
 notas:
   - El Kalina del mismo paper (1615 kW, 100 bar) no es un KCS-11; no incluirlo como caso del ORC.
+
+# Bloque que lee scripts/comparar_verificacion.py (plan de verificación, 2026-11-01).
+# Mapeo a modo R (V-B): T_fuente = gases a 346 °C, T_sumidero = agua de enfriamiento a 25 °C;
+# ε_ev y ε_cond salen de los estados; ε_rec sale de Q_rec = 4444 kW. ṁ = 25 kg/s (derivado).
+# Potencia eléctrica fuera del solver: W_el = η_gen·Ẇ_t − Ẇ_p/η_motor. Tolerancias V-D, §7:
+# ±2 % en potencias y calores (ṁ 25 frente a ≈ 26 del texto), ±0,5 pp en η.
+verificacion:
+  - id_punto: VP-06
+    fluido: MM
+    T_fuente_degC: 346
+    T_sumidero_degC: 25
+    P_ev: {kPa: 974}
+    P_cd: {kPa: 12}
+    estado_3: {q: 1}
+    estado_1: {q: 0}
+    eta_t: 0.75
+    eta_p: 0.70
+    m: {kg_s: 25}
+    Q_rec_kW: 4444
+    electrico: {eta_gen: 0.96, eta_motor: 0.95}
+    comparar:
+      - {variable: W_el, valor_ref: 1603, unidad: kW, tolerancia: 0.02, tipo: rel, referencia: "Bombarda 2010, Tabla 5, p. 37"}
+      - {variable: eta_el, valor_ref: 0.215, unidad: "-", tolerancia: 0.005, tipo: abs, referencia: "Bombarda 2010, Tabla 5, p. 37 (W_el/Q_HRE)"}
+      - {variable: Qin, valor_ref: 7445, unidad: kW, tolerancia: 0.02, tipo: rel, referencia: "Bombarda 2010, Tabla 5, p. 37 (HRE)"}
+      - {variable: Qout, valor_ref: 5771, unidad: kW, tolerancia: 0.02, tipo: rel, referencia: "Bombarda 2010, Tabla 5, p. 37"}
+      - {variable: dh_s, valor_ref: 92, unidad: kJ/kg, tolerancia: 0.02, tipo: rel, referencia: "Bombarda 2010, §4, p. 24"}

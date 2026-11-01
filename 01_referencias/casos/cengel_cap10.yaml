@@ -1,0 +1,77 @@
+# Casos con agua e isobutano de Çengel y Boles, cap. 10 (ciclos de potencia de vapor).
+id: cengel_cap10
+cita: >-
+  Çengel, Y. A., y Boles, M. A. Termodinámica. Cap. 10, Ciclos de potencia de vapor y combinados
+  (edición en español). PDF del usuario: Papers/CICLOS_DE_POTENCIA_DE_VAPOR_Y_COMBINADOS.pdf
+tipo: prueba de unidad (agua, tablas redondeadas) y orden de magnitud (isobutano)
+paginas: numeración impresa del libro
+
+casos:
+  ej_10_1:
+    ref: "Ej. 10-1, p. 564"
+    datos: {P_ev_kPa: 3000, T3_degC: 350, P_cd_kPa: 75, estado_1: líquido saturado, eta_t: 1, eta_p: 1, origen: declarado}
+    resultados: {w_b: 3.03, q_ent: 2728.6, q_sal: 2018.6, x4: 0.886, eta: 0.260}
+    nota: ya probado en tests/test_cengel.py (con el Ej. 10-7, T_H = 800 K y T0 = 300 K)
+  ej_10_2:
+    ref: "Ej. 10-2, Fig. 10-5, pp. 567-568"
+    datos:
+      bomba: {P_entrada_kPa: 9, T_entrada_degC: 38, P_salida_kPa: 16000, eta_p: 0.85, origen: declarado}
+      turbina: {P_entrada_kPa: 15000, T_entrada_degC: 600, P_salida_kPa: 10, eta_t: 0.87, origen: declarado}
+      m: {valor: 15, unidad: kg/s}
+    resultados: {w_bomba: 19.0, w_turbina: 1277.0, q_entrada: 3487.5, w_neto: 1258.0, eta: 0.361, W_neto_MW: 18.9}
+    nota: >-
+      Tiene caídas de presión (16 → 15 MPa en la caldera, 10 → 9 kPa en el condensador). El modelo
+      supone ΔP = 0 (H3), así que no se reproduce como ciclo: solo se verifican la bomba y la
+      turbina por separado (nivel V1). El libro calcula la bomba con v·ΔP/η.
+  prob_10_29:
+    ref: "Prob. 10-29 (con los datos del 10-27), p. 600"
+    datos:
+      isobutano: {P_entrada_turbina_kPa: 3250, T_entrada_turbina_degC: 145, P_salida_turbina_kPa: 400, T_salida_turbina_degC: 80, eta_p: 0.90, origen: declarado}
+      estado_1: {valor: líquido saturado a 400 kPa, origen: supuesto, nota: el enunciado no lo dice}
+      fuente: {pozo_kg_s: 230, pozo: líquido saturado a 230 °C, P_flash_kPa: 500, T_salida_agua_degC: 90, origen: "declarado (10-27 y 10-29)"}
+      sumidero: {valor: aire, T_degC: 25, origen: supuesto, nota: condensador enfriado por aire sin T declarada; no cambia η ni Ẇ}
+    resultados: {m_isobutano: 105.5, W_neto_binario_MW: 6.14, eta_binario: 0.122}
+    nota: respuestas finales del libro (sin solución desarrollada); η_t se deriva de T4 = 80 °C
+
+# Bloque que lee scripts/comparar_verificacion.py. Tolerancias V-D, §7 del plan (Çengel:
+# ±0,5 % en calores y trabajos, ±0,2 pp en η).
+verificacion:
+  - id_punto: VP-01
+    fluido: Water
+    T_fuente_degC: 526.85          # T_H = 800 K del Ej. 10-7
+    T_sumidero_degC: 26.85         # T0 = 300 K del Ej. 10-7
+    P_ev: {kPa: 3000}
+    P_cd: {kPa: 75}
+    estado_3: {T_degC: 350}
+    estado_1: {q: 0}
+    eta_t: 1.0
+    eta_p: 1.0
+    m: {kg_s: 1}
+    comparar:
+      - {variable: eta, valor_ref: 0.260, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Ej. 10-1, p. 564"}
+      - {variable: Qin, valor_ref: 2728.6, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-1, p. 564 (por kg/s)"}
+      - {variable: Qout, valor_ref: 2018.6, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-1, p. 564 (por kg/s)"}
+      - {variable: Wp, valor_ref: 3.03, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-1, p. 564 (por kg/s)"}
+  - id_punto: VP-02
+    tipo: componentes
+    fluido: Water
+    bomba: {P_entrada_kPa: 9, T_entrada_degC: 38, P_salida_kPa: 16000, eta_p: 0.85}
+    turbina: {P_entrada_kPa: 15000, T_entrada_degC: 600, P_salida_kPa: 10, eta_t: 0.87}
+    comparar:
+      - {variable: w_bomba, valor_ref: 19.0, unidad: kJ/kg, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-2, p. 567", causa: "método: el libro usa v·ΔP/η (Ec. 10-3, v = 0,001009 de tablas) y da 18,95 ≈ 19,0; el código usa h(P2, s1), que incluye la compresibilidad del líquido (18,88). Causa hallada tras la primera corrida, 2026-11-01"}
+      - {variable: w_turbina, valor_ref: 1277.0, unidad: kJ/kg, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-2, p. 568"}
+  - id_punto: VP-05
+    fluido: IsoButane
+    T_fuente_degC: 151.83          # T_sat del agua a 500 kPa (separador); no cambia η ni Ẇ
+    T_sumidero_degC: 25
+    P_ev: {kPa: 3250}
+    P_cd: {kPa: 400}
+    estado_3: {T_degC: 145}
+    estado_1: {q: 0}
+    eta_t: {desde_T4_degC: 80}
+    eta_p: 0.90
+    m: {flash: {m_pozo: 230, T_pozo_degC: 230, P_flash_kPa: 500, T_salida_degC: 90}}
+    comparar:
+      - {variable: m, valor_ref: 105.5, unidad: kg/s, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-29, p. 600"}
+      - {variable: Wnet, valor_ref: 6140, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-29, p. 600"}
+      - {variable: eta, valor_ref: 0.122, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Prob. 10-29, p. 600"}
