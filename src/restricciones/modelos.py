@@ -2,7 +2,7 @@
 
 Mismo esquema que el Kalina (ficha `Falla`, la más severa manda), con la correspondencia
 de D-15 §4.1: N2 y N2x numéricos; S1, S2, S4-S8 de segunda ley (S3 no aplica: no hay
-válvula); O1, O2, O3, O5 operativos; L1-L3 nuevos (límites del fluido y pinch del modo F).
+válvula); O1, O2, O3, O5 operativos; L1-L2 nuevos (límites del fluido).
 La etiqueta «KALINA» del Kalina se llama aquí ADMISIBLE.
 """
 

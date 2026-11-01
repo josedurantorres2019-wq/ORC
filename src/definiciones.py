@@ -44,8 +44,6 @@ def entradas_R(defs: dict, *, caso: str = "diseno") -> dict:
         "T_fuente": valor(defs, f"casos.{caso}.T_fuente"),
         "T_sumidero": valor(defs, f"casos.{caso}.T_sumidero"),
         "eps_cond": valor(defs, "entradas_modo_R.eps_cond"),
-        "dT_cd": None,
-        "dT_sc": None,
         "eta_t": valor(defs, "entradas_modo_R.eta_t"),
         "eta_p": valor(defs, "entradas_modo_R.eta_p"),
         "eps_ev": valor(defs, "entradas_modo_R.eps_ev"),
@@ -65,6 +63,4 @@ def criterios(defs: dict, *, fluido: str) -> dict:
         "f_Pcrit": valor(defs, "umbrales.f_Pcrit"),
         "T3_max": valor(defs, "umbrales.T3_max_MM") if fluido == "MM"
         else valor(defs, "umbrales.T3_max_otros"),
-        "dT_pp_ev": valor(defs, "umbrales.dT_pp_ev"),
-        "dT_pp_cd": valor(defs, "umbrales.dT_pp_cd"),
     }

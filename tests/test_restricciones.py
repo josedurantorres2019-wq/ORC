@@ -13,7 +13,7 @@ from src.state import EstadoTermo
 
 CRIT = {"tol_N2": 1e-3, "tol_exergia": 1e-3, "x4_min": 0.90, "x3_min": 1.0,
         "T_amb_max": None,  # ambiente = sumidero; O2 se prueba con agua en test_o2.py
-        "f_Pcrit": 0.90, "T3_max": None, "dT_pp_ev": 10.0, "dT_pp_cd": 10.0}
+        "f_Pcrit": 0.90, "T3_max": None}
 EPS = {"eps_ev": 0.85, "eps_rec": None}
 
 
@@ -76,7 +76,7 @@ def test_x4_humedo_solo_si_x4_menor_que_1():
     assert "O1" not in _codigos(_base(e4=_e(330.0, 2.01, 1.0, "4")))
 
 
-def test_S7_S4_Sg_L2_L3():
+def test_S7_S4_Sg_L2():
     assert "S7" in _codigos(_base(), eps={"eps_ev": 1.2, "eps_rec": None})
     r = _base(Qrec=5.0, e2r=_e(335.0, 1.2, 0.0, "2r"))
     assert "S4" in _codigos(r)
@@ -85,8 +85,6 @@ def test_S7_S4_Sg_L2_L3():
     assert "N2x" in _codigos(_base(), {"cierre_exergia": 1e-2, "Sgen": {}})
     crit = dict(CRIT, T3_max=390.0)
     assert "L2" in {f.codigo for f in evaluar_ciclo(_base(), None, FAKE, criterios=crit, eps=EPS).fallas}
-    rF = _base(modo="F", T_f1=420.0, T_w1=300.0, dT_min_ev=9.0, dT_min_cd=10.0)
-    assert "L3" in _codigos(rF)
 
 
 def test_la_mas_severa_manda():

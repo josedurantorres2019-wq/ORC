@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from src import definiciones as d
-from src.cycle_solver import resolver_ciclo_F, resolver_ciclo_R
+from src.cycle_solver import resolver_ciclo_R
 from src.exergy import calcular_exergia
 
 pytestmark = pytest.mark.corrida
@@ -35,18 +35,3 @@ def test_modo_R_cierra(fluido, defs, eps_rec):
     ex = calcular_exergia(r, b, T0=d.valor(defs, "estado_muerto.T0"),
                           P0=d.valor(defs, "estado_muerto.P0"))
     _comprobar(r, ex, defs)
-
-
-def test_modo_F_con_agua_cierra(fluido, defs):
-    clave, b = fluido
-    T_f1 = d.valor(defs, "casos.enunciado.T_fuente" if clave == "MM" else "casos.diseno.T_fuente")
-    T0 = d.valor(defs, "estado_muerto.T0")
-    P_ev = 0.3 * b.P_crit
-    r = resolver_ciclo_F(b, P_ev=P_ev, T_f1=T_f1, m_f=10.0, cp_f=4.2, T_w1=T0, m_w=200.0,
-                         cp_w=4.18, dT_pp_ev=d.valor(defs, "umbrales.dT_pp_ev"),
-                         dT_pp_cd=d.valor(defs, "umbrales.dT_pp_cd"), dT_sh=0.0, dT_sc=0.0,
-                         eta_t=0.85, eta_p=0.75, eps_rec=None)
-    ex = calcular_exergia(r, b, T0=T0, P0=d.valor(defs, "estado_muerto.P0"))
-    _comprobar(r, ex, defs)
-    assert r["dT_min_ev"] >= d.valor(defs, "umbrales.dT_pp_ev") - 1e-6
-    assert r["dT_min_cd"] >= d.valor(defs, "umbrales.dT_pp_cd") - 1e-6

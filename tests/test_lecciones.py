@@ -40,11 +40,10 @@ def test_src_no_llama_a_scripts_ni_tiene_sufijos_de_version():
         assert not re.search(r"_(v\d+|final|nuevo|viejo)\.py$", p.name), p.name
 
 
-@pytest.mark.parametrize("funcion", [cycle_solver.resolver_ciclo_R, cycle_solver.resolver_ciclo_F])
-def test_sin_valores_fisicos_por_defecto(funcion):
+def test_sin_valores_fisicos_por_defecto():
     """Lección: ninguna cifra escrita a mano; los valores vienen de definiciones.yaml."""
-    numericos = {"tol_h", "max_iter", "n_tramos", "tol_T", "T_cd"}
-    con_defecto = {n for n, p in inspect.signature(funcion).parameters.items()
+    numericos = {"tol_h", "max_iter"}
+    con_defecto = {n for n, p in inspect.signature(cycle_solver.resolver_ciclo_R).parameters.items()
                    if p.default is not inspect.Parameter.empty}
     assert con_defecto <= numericos
 
@@ -70,7 +69,7 @@ def test_eps_cond_baja_deja_bifasico(fluido, defs):
     T_sum = d.valor(defs, "casos.diseno.T_sumidero")
     P_cd = b.P_sat(T_sum + d.valor(defs, "umbrales.dT_cd"))
     e4r = estado_Ph(b, P_cd, b.h(P_cd, q=1.0), m=1.0, etiqueta="4r")
-    e1, _ = condensador.resolver_eps(e4r, b, T_sumidero=T_sum, eps=0.80, m=1.0)
+    e1, _ = condensador.resolver(e4r, b, T_sumidero=T_sum, eps=0.80, m=1.0)
     assert e1.fase == "bifasico"
-    e1_lim, _ = condensador.resolver_eps(e4r, b, T_sumidero=T_sum, eps=1.0, m=1.0)
+    e1_lim, _ = condensador.resolver(e4r, b, T_sumidero=T_sum, eps=1.0, m=1.0)
     assert e1_lim.fase == "liquido" and e1_lim.T == pytest.approx(T_sum, abs=1e-6)

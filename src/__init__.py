@@ -4,7 +4,7 @@ Organización por capas, la misma del Kalina tercero:
 
     properties/  contrato `PropertyBackend` + `CoolPropAdapter` (el único que importa CoolProp)
     components/  un archivo por equipo, funciones puras `resolver(...)`
-    cycle_solver resuelve el ciclo en modo R (reservorios) o F (fuente finita con pinch)
+    cycle_solver resuelve el ciclo cerrando por efectividades (modo R, cierre B, D-16)
     exergy       exergía física, Ė_d por componente y η_II
     restricciones/  criterios N/S/O/L con ficha `Falla`; la más severa manda
 

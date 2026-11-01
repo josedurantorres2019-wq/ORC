@@ -8,15 +8,15 @@ from __future__ import annotations
 
 import pytest
 
-from src.cycle_solver import resolver_ciclo_R
+from src.cycle_solver import CicloSinSolucionError, resolver_ciclo_R
 from src.exergy import calcular_exergia
 from src.restricciones import evaluar_ciclo
 
 T_SUM = 300.0
-B_KW = dict(T_fuente=800.0, T_sumidero=T_SUM, P_ev=1000.0, P_cd=75.0, dT_cd=None, dT_sc=None,
+B_KW = dict(T_fuente=800.0, T_sumidero=T_SUM, P_ev=1000.0, P_cd=75.0,
             eta_t=0.85, eta_p=0.75, eps_ev=0.95, m=1.0)
 CRIT = {"tol_N2": 1e-3, "tol_exergia": 1e-3, "x4_min": 0.0, "x3_min": 1.0, "f_Pcrit": 1.0,
-        "T3_max": None, "dT_pp_ev": None, "dT_pp_cd": None, "T_amb_max": None}
+        "T3_max": None, "T_amb_max": None}
 
 
 def _ciclo(agua, eps_cond, eps_rec=None):
@@ -31,7 +31,7 @@ def _ciclo(agua, eps_cond, eps_rec=None):
 def test_lazo_h1_cierra_balances(agua, eps_rec):
     r, ex, _ = _ciclo(agua, 0.95, eps_rec)
     e = r["estados"]
-    assert r["cierre_cd"] == "B" and 1 < r["iteraciones"] < 50
+    assert 1 < r["iteraciones"] < 50
     assert r["N2"] < 1e-9 and ex["cierre_exergia"] < 1e-9
     assert all(v >= -1e-12 for v in ex["Sgen"].values())
     h1_min = agua.h(75.0, T=T_SUM)
@@ -54,17 +54,8 @@ def test_eps_baja_bifasico_y_O2_falla(agua):
     assert "O2" in fallas
 
 
-def test_B_con_la_eps_de_A_reproduce_A(agua):
-    """Consistencia: si a B se le da la ε_cd,eq que sale del cierre A, sale el mismo ciclo."""
-    rA = resolver_ciclo_R(agua, eps_cond=None, eps_rec=None,
-                          **dict(B_KW, dT_sc=0.0))
-    rB = resolver_ciclo_R(agua, eps_cond=rA["eps_cd_eq"], eps_rec=None, **B_KW)
-    assert rB["estados"]["e1"].h == pytest.approx(rA["estados"]["e1"].h, abs=1e-6)
-    assert rB["Wnet"] == pytest.approx(rA["Wnet"], rel=1e-9)
-
-
-def test_entradas_mal_combinadas(agua):
-    with pytest.raises(ValueError):          # B sin P_cd
-        resolver_ciclo_R(agua, eps_cond=0.9, eps_rec=None, **dict(B_KW, P_cd=None))
-    with pytest.raises(ValueError):          # B con dT_sc
-        resolver_ciclo_R(agua, eps_cond=0.9, eps_rec=None, **dict(B_KW, dT_sc=0.0))
+def test_entradas_fuera_de_rango(agua):
+    with pytest.raises(ValueError):                  # ε_cond fuera de [0, 1]
+        resolver_ciclo_R(agua, eps_cond=1.2, eps_rec=None, **B_KW)
+    with pytest.raises(CicloSinSolucionError):       # P_cd >= P_ev
+        resolver_ciclo_R(agua, eps_cond=0.9, eps_rec=None, **dict(B_KW, P_cd=1000.0))

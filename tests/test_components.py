@@ -52,12 +52,12 @@ def test_turbina(fluido):
     assert e4.T == pytest.approx(b.estado_Ph(P4, e4.h)["T"], abs=1e-9)
 
 
-def test_evaporador_R(fluido):
+def test_evaporador(fluido):
     _, b = fluido
     P = 0.4 * b.P_crit
     e2 = estado_Ph(b, P, b.h(P, T=b.T_sat(P) - 40.0), m=M, etiqueta="2")
     T_f = b.T_sat(P) + 15.0
-    e3, r = evaporador.resolver_R(e2, b, T_fuente=T_f, eps=0.85, m=M)
+    e3, r = evaporador.resolver(e2, b, T_fuente=T_f, eps=0.85, m=M)
     assert e3.P == P                                                    # H3: ΔP = 0
     assert r["h3_max"] == pytest.approx(b.h(P, T=T_f), rel=1e-12)
     assert (e3.h - e2.h) / (r["h3_max"] - e2.h) == pytest.approx(0.85, rel=1e-12)
@@ -65,53 +65,19 @@ def test_evaporador_R(fluido):
     assert e3.T <= T_f                                                  # S5
 
 
-@pytest.mark.parametrize("dT_sh", [0.0, 10.0])
-def test_evaporador_F_pinch(fluido, dT_sh):
-    _, b = fluido
-    P = 0.4 * b.P_crit
-    Ts = b.T_sat(P)
-    e2 = estado_Ph(b, P, b.h(P, T=Ts - 40.0), m=None, etiqueta="2")
-    T_f1, m_f, cp_f, dT_pp = Ts + 40.0, 10.0, 4.2, 10.0
-    e3, r = evaporador.resolver_F(e2, b, T_f1=T_f1, m_f=m_f, cp_f=cp_f, dT_pp=dT_pp,
-                                  dT_sh=dT_sh, n_tramos=40)
-    m = r["m"]
-    assert e3.m == m > 0.0
-    # energía: lo que cede la fuente lo recibe el fluido (H2)
-    assert r["Qin"] == pytest.approx(m_f * cp_f * (T_f1 - r["T_f2"]), rel=1e-12)
-    assert r["Qin"] == pytest.approx(m * (e3.h - e2.h), rel=1e-12)
-    # pinch: el mínimo del perfil discreto es exactamente ΔT_pp
-    assert r["dT_min"] == pytest.approx(dT_pp, abs=1e-9)
-    assert e3.T == pytest.approx(Ts + dT_sh, abs=1e-6)
-    if dT_sh == 0.0:
-        assert e3.q == pytest.approx(1.0, abs=1e-9)
-
-
 def test_condensador(fluido):
     _, b = fluido
-    T_sum, dT_cd = 300.0, 10.0
-    P_cd = condensador.presion_R(b, T_sumidero=T_sum, dT_cd=dT_cd)
-    assert b.T_sat(P_cd) == pytest.approx(T_sum + dT_cd, abs=1e-6)
+    T_sum = 300.0
+    P_cd = b.P_sat(T_sum + 10.0)
     e4 = estado_Ph(b, P_cd, b.h(P_cd, T=T_sum + 40.0), m=M, etiqueta="4r")
-    e1, r = condensador.resolver(e4, b, dT_sc=0.0, m=M)
-    assert e1.P == P_cd and e1.fase == "liquido" and e1.q == 0.0
+    e1, r = condensador.resolver(e4, b, T_sumidero=T_sum, eps=0.95, m=M)
+    assert e1.P == P_cd and e1.m == M                                   # H3, masa
+    assert r["h1_min"] == pytest.approx(b.h(P_cd, T=T_sum), rel=1e-12)
+    assert (e4.h - e1.h) / (e4.h - r["h1_min"]) == pytest.approx(0.95, rel=1e-12)
     assert r["Qout"] == pytest.approx(M * (e4.h - e1.h), rel=1e-12) and r["Qout"] > 0.0
-    eps = condensador.eps_equivalente(e4, e1, b, T_sumidero=T_sum)
-    assert eps == pytest.approx((e4.h - e1.h) / (e4.h - b.h(P_cd, T=T_sum)), rel=1e-12)
-    assert 0.0 < eps < 1.0
-    sub = condensador.estado_salida(b, P_cd=P_cd, dT_sc=5.0, m=M)
-    assert sub.T == pytest.approx(T_sum + dT_cd - 5.0, abs=1e-6) and sub.h < e1.h
-
-
-def test_condensador_agua_F(fluido):
-    _, b = fluido
-    P_cd = 0.05 * b.P_crit
-    e4 = estado_Ph(b, P_cd, b.h(P_cd, T=b.T_sat(P_cd) + 30.0), m=M, etiqueta="4r")
-    e1, r = condensador.resolver(e4, b, dT_sc=0.0, m=M)
-    T_w1, m_w, cp_w = b.T_sat(P_cd) - 20.0, 50.0, 4.18
-    a = condensador.agua_F(e4, e1, b, T_w1=T_w1, m_w=m_w, cp_w=cp_w, n_tramos=40)
-    assert m_w * cp_w * (a["T_w2"] - T_w1) == pytest.approx(r["Qout"], rel=1e-12)
-    # El cierre de D-15 (pinch contra T_w2) es conservador: el mínimo real no es menor.
-    assert a["dT_min"] >= b.T_sat(P_cd) - a["T_w2"] - 1e-6
+    assert e1.T >= T_sum                                                # S6
+    with pytest.raises(ValueError):
+        condensador.resolver(e4, b, T_sumidero=T_sum, eps=1.2, m=M)
 
 
 def test_recuperador(fluido):

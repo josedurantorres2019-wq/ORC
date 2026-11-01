@@ -25,7 +25,7 @@ def evaluar_ciclo(resultado: dict, exergia: dict | None, backend, *, criterios: 
                                     sgen=None if exergia is None else exergia["Sgen"])
     fallas += verificar_operativos(
         resultado, backend, **{k: criterios[k] for k in ("x4_min", "x3_min", "T_amb_max", "f_Pcrit",
-                                                "T3_max", "dT_pp_ev", "dT_pp_cd")})
+                                                "T3_max")})
     clase = (min((f.clasificacion for f in fallas), key=ORDEN.__getitem__)
              if fallas else Clasificacion.ADMISIBLE)
     return ResultadoValidacion(clasificacion=clase, fallas=fallas, no_aplica=NO_APLICA)
