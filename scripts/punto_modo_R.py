@@ -4,8 +4,8 @@ Uso (desde la raíz del repo; solo cuando el usuario ordene la corrida):
     python -m scripts.punto_modo_R --fluido n-butano --P_ev <kPa> --P_cd <kPa> --eps_cond <->
 (cierre B, D-16: los valores los da el caso; no hay valores por defecto).
 
-`scripts/` llama a `src/` y nunca al revés. No guarda nada: los estudios van en
-`estudios/<id>/` con manifiesto, CSV crudo y log.
+`scripts/` llama a `src/` y nunca al revés. Con ``--guardar`` agrega el punto al Excel único
+(`datos/resultados_orc.xlsx`, ver `src/exportar_excel.py`); sin él no guarda nada.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import sys
 from src import definiciones as d
 from src.cycle_solver import resolver_ciclo_R
 from src.exergy import calcular_exergia
+from src.exportar_excel import RUTA, agregar_corrida, filas_corrida
 from src.properties.coolprop_adapter import CoolPropAdapter
 from src.restricciones import evaluar_ciclo
 
@@ -29,6 +30,8 @@ def main() -> None:
     ap.add_argument("--eps_cond", type=float, default=None,
                     help="efectividad del condensador; obligatoria si el YAML la tiene en null")
     ap.add_argument("--caso", default="diseno", help="clave de `casos` (T_fuente, T_sumidero)")
+    ap.add_argument("--guardar", action="store_true", help=f"agrega el punto a {RUTA.name}")
+    ap.add_argument("--etiqueta", default=None, help="nombre libre de la corrida en el Excel")
     a = ap.parse_args()
 
     defs = d.cargar()
@@ -56,6 +59,12 @@ def main() -> None:
         print(f"  {k:<18} {ex[k]}")
     print("  Ed por componente [kW]:", {k: round(v, 4) for k, v in ex["Ed"].items()})
     print(val.mensaje_reporte())
+    if a.guardar:
+        meta = {"fluido": a.fluido, "fluido_coolprop": backend.fluido, "caso": a.caso,
+                "version_definiciones": defs.get("version"), "etiqueta": a.etiqueta}
+        filas = filas_corrida(r, ex, val, meta=meta,
+                              entradas={**entradas, "P_ev": a.P_ev, "P_cd": a.P_cd})
+        print(f"Guardado en {RUTA} como corrida {agregar_corrida(filas)}")
 
 
 if __name__ == "__main__":

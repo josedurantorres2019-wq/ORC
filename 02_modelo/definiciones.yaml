@@ -56,6 +56,7 @@ casos:   # D-03 (ajustada el 2026-10-30: sin datos de las corridas del Kalina)
     modo: R
   enunciado:
     T_fuente: {valor: 623.15, unidad: K, decision: D-03}
+    T_sumidero: {valor: 298.15, unidad: K, fuente: "Bombarda 2010, Tabla 3 p. 35 (agua de enfriamiento a 25 °C)", decision: "plan de verificación V-C (usuario, 2026-11-01)"}
     fluidos: [MM]
     modos: [R, F]
     pendiente: D-08 (c_p de los gases y T_f2,min) para el modo F
