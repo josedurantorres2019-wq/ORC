@@ -17,9 +17,10 @@ modelo:
     R: {uso: convalidacion con el Kalina (reservorios, eps_ev, m = 1 kg/s), decision: D-15}
     F: {uso: benchmark y valores absolutos (fuente finita, pinch con perfil T-Q), decision: D-15}
   condensador_modo_R:
-    valor: liquido saturado a P_cd = P_sat(T_sumidero + dT_cd); eps_cd_eq es un resultado, no una entrada
-    fuente: comprobacion con CoolProp (eps_cond = 0.80 deja bifasico en la bomba)
-    decision: D-15
+    valor: "cierre B, como el Kalina tercero: P_cd y eps_cond son datos; h1 = h4r - eps_cond*(h4r - h(P_cd, T_sumidero)); el estado 1 es resultado y O2 juzga si es liquido"
+    alternativa: "cierre A (D-15): liquido saturado a P_cd = P_sat(T_sumidero + dT_cd); eps_cd_eq como resultado"
+    nota: con eps_cond baja un fluido puro llega bifasico a la bomba (D-15 §2.6); lo detecta O2
+    decision: D-16 (modifica D-15 §2)
   propiedades: {valor: CoolProp 8.0.0 HEOS, decision: D-15 (H6)}
   potencia_neta: {valor: W_net = W_t - W_p (en el eje, sin generador), decision: D-15 (H11)}
   eta_generador_informativo: {valor: 0.96, fuente: Bombarda 2010; Vera 2018, uso: solo W_el, decision: D-15 (H11)}
@@ -31,6 +32,11 @@ hipotesis:   # H1-H16, detalle en plan/MODELO_MATEMATICO_ORC_2026-10-30.md §3
   energia_cinetica_potencial: despreciable
   sentido_intercambiadores: contracorriente
   exergia: {valor: solo fisica, decision: D-15 (H14)}
+  eta_II:
+    modo_R: {valor: W_net / Ex_Qin, Ex_Qin: Q_in*(1 - T0/T_fuente), decision: D-15}
+    modo_F: {valor: W_net / Ex_f1, decision: D-15}
+    variante_no_adoptada: {valor: W_t / (Ex_Qin + W_p), fuente: Cengel cap. 10 Ej. 10-7, uso: solo comparar con textos}
+  base_ecuaciones: {fuente: Cengel cap. 10 Ec. 10-2 a 10-11 y 10-18 a 10-22, nota: Ec. 10-3 (v*dP) solo agua; usar h(P2, s1) con CoolProp}
 
 estado_muerto:
   T0: {valor: 300.032917, unidad: K, fuente: CONTEXT.md del Kalina (media horaria de T ambiente), estado: verificado}
@@ -65,6 +71,7 @@ entradas_modo_R:   # valores base; la corrida de comparacion fijara los suyos
   eta_p: {valor: 0.75, fuente: valor por defecto del modelo Kalina (CONTEXT.md), decision: D-15 (H5)}
   eps_ev: {valor: 0.85, fuente: valor por defecto de eps_HRVG del modelo Kalina (CONTEXT.md), decision: D-07}
   eps_rec: {valor: null, nota: recuperador apagado}
+  eps_cond: {valor: null, nota: dato del caso (como P_cd); se fija con la corrida de comparacion, decision: D-16}
   m: {valor: 1.0, unidad: kg/s, decision: D-15 (H13)}
 
 umbrales:   # D-07
@@ -74,6 +81,8 @@ umbrales:   # D-07
     fuente: Kalina O1 (0.90); Campos 2013 (0.9); tesis Campos 2014 (0.85)
     estado: verificado
     aplica: solo si x4 < 1
+    fluidos_secos: {comprobacion: T4 > T_sat(P_cd), estado: por verificar con CoolProp por fluido}
+    fuente_textbook: Cengel cap. 10 pag. 561
   x3_min: {valor: 1.0, fuente: D-15 §2.6; las 5 fuentes usan vapor saturado, estado: verificado}
   dT_sh: {valor: 0.0, unidad: K, sensibilidad: [0.0, 10.0], fuente: las 5 fuentes; tesis Campos 2014, estado: verificado, aplica: modo F}
   dT_cd:
@@ -82,19 +91,20 @@ umbrales:   # D-07
     sensibilidad: [5.0, 15.0]
     fuente: Vera 2018 (dT 10 C); Bombarda 2010 (LMTD 10-15 C); Yari y Campos condensan 12-15 K sobre T0
     estado: verificado
-    aplica: modo R
+    aplica: modo R, solo cierre A (alternativa); en el cierre B (D-16) P_cd es dato y T_sat(P_cd) - T_sumidero es un resultado
   dT_sc:
     valor: 0.0
     unidad: K
     sensibilidad: [8.0, 20.0]
     fuente: Yari, Campos y Vera (liquido saturado); NPSH de 8-20 K segun la bomba
     estado: verificado
-    nota: el rango 8-20 K se trata como limitacion, no como filtro
+    nota: el rango 8-20 K se trata como limitacion, no como filtro (NPSH fuera del modelo por H3, D-16)
+    aplica: solo cierre A; en el cierre B el subenfriamiento es resultado de eps_cond
   cavitacion_O2:
-    regla: T_sat(P_cd) > T_amb_max
-    T_amb_max: {valor: 303.55, unidad: K, fuente: regla O2 del modelo Kalina (src/restricciones/operativos.py)}
-    margen_sensibilidad: {valor: 2.0, unidad: K, estado: propuesta}
-    estado: verificado
+    regla: "estado 1 liquido saturado o comprimido en el peor ambiente: h1' = h4r - eps*(h4r - h(P_cd, max(T_sumidero, T_amb))) <= h_l(P_cd); como O2 del Kalina tercero"
+    T_amb_max: {valor: null, nota: "null = ambiente igual al sumidero (campana final del Kalina tercero); solo se da si hay enfriador artificial"}
+    npsh: fuera del modelo por H3 (dP = 0); limitacion declarada
+    decision: D-16
   dT_pp_ev: {valor: 10.0, unidad: K, sensibilidad: [3.0, 10.0], fuente: Yari 2015 (10 K); tesis Campos 2014 (3-6 C), estado: verificado, aplica: modo F}
   dT_pp_cd: {valor: 10.0, unidad: K, sensibilidad: [5.0, 15.0], fuente: Vera 2018; Bombarda 2010 (LMTD), estado: verificado, aplica: modo F}
   f_Pcrit:
@@ -117,3 +127,10 @@ tolerancias:   # D-01, fijadas antes de correr
   cierre_exergia_rel: {valor: 1.0e-3, fuente: criterio N2 del Kalina, aplicado a Ex_Qin}
   benchmark_Wnet_rel: {valor: 0.01, estado: propuesta, decision: D-01 (P2)}
   diferencia_eta_II_fluidos: {valor: 0.005, estado: propuesta, fuente: banda no concluyente del Kalina (0.4-0.7 pp), decision: D-01 (P4)}
+
+salidas_adicionales:   # aprobadas por el usuario; son indicadores, no cambian ecuaciones ni grados de libertad
+  r_p: {formula: P_ev / P_cd, fuente: analogo de la relacion de presiones del Brayton}
+  P_ev_sobre_Pcrit: {formula: P_ev / P_crit, fuente: D-07 (f_Pcrit), nota: presion reducida}
+  dh_s: {formula: h3 - h4s, unidad: kJ/kg, fuente: Bombarda 2010 (salto isentropico, velocidad especifica y rpm)}
+  VR: {formula: v4 / v3, fuente: relacion de volumen de la turbina, estado: propuesta}
+  r_bw: {formula: w_p / w_t, fuente: Cengel cap. 10 Ej. 10-1 (rbw)}
