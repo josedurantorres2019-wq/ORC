@@ -25,3 +25,4 @@ DWSIM-PR:
     n-butano sale bien. Cambiar el algoritmo de flash (SingleCompFlash, NestedLoops) no lo corrige.
   VP-C-R134a: *bomba_pr
   VP-C-R152a: *bomba_pr
+  VP-T7-R152a: *bomba_pr

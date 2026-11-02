@@ -139,3 +139,34 @@ verificacion:
     comparar:
       - {variable: eta, valor_ref: 0.07883, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
       - {variable: Wnet, valor_ref: 1377, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719"}
+  # Tabla 7 (mínimo costo de producto, p. 719): mismos supuestos que la Tabla 6, otra T3. Solo los
+  # fluidos cuya T3 cambia frente a la Tabla 6 (R1234yf, propano y R134a repiten el punto).
+  # Tolerancias las mismas de la Tabla 6, fijadas antes de correr (2026-11-02).
+  - <<: *yari
+    id_punto: VP-T7-nbutano
+    fluido: n-Butane
+    P_ev: {T_sat_degC: 93.21}
+    comparar:
+      - {variable: eta, valor_ref: 0.102, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 7, p. 719"}
+      - {variable: Wnet, valor_ref: 1110, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 7, p. 719"}
+  - <<: *yari
+    id_punto: VP-T7-isobutano
+    fluido: IsoButane
+    P_ev: {T_sat_degC: 92.49}
+    comparar:
+      - {variable: eta, valor_ref: 0.09823, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 7, p. 719"}
+      - {variable: Wnet, valor_ref: 1189, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 7, p. 719"}
+  - <<: *yari
+    id_punto: VP-T7-R152a
+    fluido: R152a
+    P_ev: {T_sat_degC: 91.83}
+    comparar:
+      - {variable: eta, valor_ref: 0.09667, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 7, p. 719"}
+      - {variable: Wnet, valor_ref: 1252, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 7, p. 719", causa: "EoS del R152a: Yari usó EES; EES V10 con las mismas entradas da 1249,1 kW (−0,23 %, dentro de tolerancia) y el código 1244,5 (−0,60 %). La diferencia código–EES (0,37 %) es la de propiedades ya medida en V0 para el R152a (+0,41 % en Δh). Si además ṁ se calcula con el latente de EES, sale +0,61 %: el dato de Yari cae dentro de esa dispersión. Hallado el 2026-11-02, después de la corrida"}
+  - <<: *yari
+    id_punto: VP-T7-amoniaco
+    fluido: Ammonia
+    P_ev: {T_sat_degC: 93.06}
+    comparar:
+      - {variable: eta, valor_ref: 0.1068, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 7, p. 719"}
+      - {variable: Wnet, valor_ref: 1042, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 7, p. 719"}

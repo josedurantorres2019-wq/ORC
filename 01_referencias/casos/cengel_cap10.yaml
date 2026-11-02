@@ -75,3 +75,39 @@ verificacion:
       - {variable: m, valor_ref: 105.5, unidad: kg/s, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-29, p. 600"}
       - {variable: Wnet, valor_ref: 6140, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-29, p. 600", causa: "EoS del isobutano que usó el libro (EES de su edición). Los estados 3 (3,25 MPa; 145 °C) y 4 (400 kPa; 80 °C) los fija el enunciado, así que w_t = h3 − h4 solo depende de las propiedades: libro 63,9–64,1 kJ/kg (de 6,14 MW y 105,5 kg/s), CoolProp 64,49, EES V10 64,41. Q_in del código (50,39 MW) cae dentro del rango del libro (50,1–50,6 MW). Causa hallada el 2026-11-02 en la revisión de advertencias"}
       - {variable: eta, valor_ref: 0.122, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Prob. 10-29, p. 600"}
+  # Problemas 10-23 y 10-21 (p. 599), agregados el 2026-11-02. Tolerancias fijadas antes de correr:
+  # las del §7 (±0,5 % y ±0,2 pp) o media unidad de la última cifra publicada, la que sea mayor.
+  # T_fuente y T_sumidero no los da el enunciado [supuesto]: solo fijan las ε equivalentes y no
+  # cambian η ni Ẇ (el ciclo vuelve al estado del libro).
+  - id_punto: VP-14
+    fluido: Water
+    T_fuente_degC: 526.85          # supuesto (como VP-01)
+    T_sumidero_degC: 25            # supuesto
+    P_ev: {kPa: 6000}
+    P_cd: {kPa: 50}
+    estado_3: {T_degC: 450}
+    estado_1: {subenfriado_K: 6.3} # declarado: «subenfriada en 6.3 °C»
+    eta_t: 0.94
+    eta_p: 1.0                     # declarado: «pérdidas de bomba despreciables»
+    m: {kg_s: 20}
+    comparar:
+      - {variable: Qin, valor_ref: 59660, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-23, p. 599"}
+      - {variable: Wp, valor_ref: 122, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-23, p. 599"}
+      - {variable: Wnet, valor_ref: 18050, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-23, p. 599"}
+      - {variable: eta, valor_ref: 0.303, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Prob. 10-23, p. 599"}
+  - id_punto: VP-15
+    fluido: Water
+    T_fuente_degC: 526.85          # supuesto
+    T_sumidero_degC: 25            # supuesto
+    P_ev: {kPa: 7000}
+    P_cd: {kPa: 10}
+    estado_3: {T_degC: 500}
+    estado_1: {q: 0}               # ciclo ideal simple: líquido saturado
+    eta_t: 1.0
+    eta_p: 1.0
+    m: {desde_W_net_kW: 45000}     # declarado: 45 MW netos
+    enfriamiento: {m_kg_s: 2000, cp_kJ_kgK: 4.18}   # 2000 kg/s declarado; cp del agua del libro (Tabla A-3)
+    comparar:
+      - {variable: eta, valor_ref: 0.389, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Prob. 10-21, p. 599"}
+      - {variable: m, valor_ref: 36, unidad: kg/s, tolerancia: 0.014, tipo: rel, referencia: "Çengel Prob. 10-21, p. 599 (dos cifras: ±0,5 kg/s)"}
+      - {variable: dT_enfriamiento, valor_ref: 8.4, unidad: K, tolerancia: 0.006, tipo: rel, referencia: "Çengel Prob. 10-21, p. 599 (±0,05 °C)"}

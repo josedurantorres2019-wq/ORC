@@ -152,9 +152,7 @@ class Ciclo:
 
     def _salidas(self, it: int) -> dict:
         U, m = self.u, self.f["m"]
-        Q_in = U["evap"].DeltaQ
-        W_t = abs(U["turb"].DeltaQ)
-        W_p = U["bomba"].DeltaQ
+        Q_in, W_t, W_p = U["evap"].DeltaQ, abs(U["turb"].DeltaQ), U["bomba"].DeltaQ
         return {"W_net": W_t - W_p, "W_t": W_t, "W_p": W_p, "Q_in": Q_in,
                 "Q_out": U["cond"].DeltaQ, "Q_rec": U["rec_f"].DeltaQ,
                 "eta": (W_t - W_p) / Q_in, "dh_s": W_t / m / self.f["eta_t"],
@@ -189,10 +187,12 @@ def main() -> None:
                   flush=True)
         if res:
             ruta = DIR / f"resultados_dwsim_{paq}.csv"
+            nuevos = {r["id_punto"] for r in res}       # con --punto se conservan los demás puntos
+            viejos = [r for r in csv.DictReader(ruta.open(encoding="utf-8"))] if ruta.exists() else []
             with ruta.open("w", newline="", encoding="utf-8") as fh:
                 w = csv.DictWriter(fh, fieldnames=list(res[0]))
                 w.writeheader()
-                w.writerows(res)
+                w.writerows([r for r in viejos if r["id_punto"] not in nuevos] + res)
             print(f"{len(res)} puntos en {ruta}")
 
 

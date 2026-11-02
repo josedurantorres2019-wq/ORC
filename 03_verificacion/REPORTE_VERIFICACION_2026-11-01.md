@@ -8,10 +8,10 @@
 
 | Herramienta | Puntos | Frente al paper | Frente al código | Veredicto |
 |---|---|---|---|---|
-| Código (Python + CoolProp) | 11 + VP-02 | 25 pasan, 4 explicadas, **1 falla (VP-04)** | — | ✅ |
-| EES V10.228 | 11/11 | igual que el código | 115 pasan, 44 explicadas por la EoS | ✅ |
-| DWSIM 8.3.4, CoolProp | 11/11 | solo VP-01, VP-05 y VP-06 cerca | falla en estados saturados | ❌ como verificación |
-| DWSIM 8.3.4, Peng-Robinson | 10/11 | n-butano, isobutano y amoníaco dentro de ~1 % | falla en la bomba con R134a, R152a, MM y R1234yf | ⚠️ parcial |
+| Código (Python + CoolProp) | 17 + VP-02 | 39 pasan, 4 explicadas, **1 falla (VP-04)** de 44 | — | ✅ |
+| EES V10.228 | 17/17 | igual que el código | 187 pasan, 59 explicadas por la EoS | ✅ |
+| DWSIM 8.3.4, CoolProp | 17/17 | solo VP-01, VP-05, VP-06, VP-14 y VP-15 cerca | falla en estados saturados | ❌ como verificación |
+| DWSIM 8.3.4, Peng-Robinson | 16/17 | n-butano, isobutano y amoníaco dentro de ~1 % | falla en la bomba con R134a, R152a, MM y R1234yf | ⚠️ parcial |
 
 La corrida final reprodujo los resultados anteriores **sin ninguna diferencia** (0,0 en W_net) en EES y en los dos paquetes de DWSIM. Pruebas: 107 pasan, más el benchmark (`-m corrida`): 18 pasan y VP-04 queda como xfail estricto.
 
@@ -74,6 +74,29 @@ Todas las variables con su veredicto están en [`reporte_tablas.md`](reporte_tab
 - En cada punto, la diferencia de Q_in entre EES y el código es igual a la diferencia de Δh entre los reservorios calculada solo con propiedades. Ejemplos: R152a +0,41 % y +0,41 %; MM +0,40 % y +0,33 %; T_sat del MM −0,83 K.
 - Los lazos de EES cierran con residuos < 1e-8.
 
+## Verificaciones agregadas (2026-11-02)
+
+Seis puntos nuevos, sacados de los papers. Las tolerancias se fijaron antes de correr: las de la Tabla 6 de Yari y, para Çengel, ±0,5 % y ±0,2 pp, o media unidad de la última cifra publicada si es mayor.
+
+| Punto | Fuente | Qué prueba | Paper | Código | EES | DWSIM-CoolProp |
+|---|---|---|---|---|---|---|
+| VP-T7-nbutano | Yari Tabla 7 (T3 = 93,21 °C) | otro punto de operación | 1110 kW | −0,04 % | +0,07 % | +16 % |
+| VP-T7-isobutano | Yari Tabla 7 (92,49 °C) | ídem | 1189 kW | −0,13 % | −0,17 % | +54 % |
+| VP-T7-R152a | Yari Tabla 7 (91,83 °C) | ídem | 1252 kW | −0,60 % ᵈ | −0,23 % | +10 % |
+| VP-T7-amoniaco | Yari Tabla 7 (93,06 °C) | ídem | 1042 kW | −0,16 % | −0,14 % | +2,8 % |
+| VP-14 | Çengel 10-23 (agua) | líquido **subenfriado 6,3 °C**: el lazo de h1 itera (5 iteraciones) | W_net 18 050 kW | −0,01 % | −0,03 % | +0,19 % |
+| VP-15 | Çengel 10-21 (agua) | ṁ desde la potencia declarada y calentamiento del agua de enfriamiento | η 38,9 % · ṁ 36 kg/s · ΔT 8,4 °C | +0,08 % · −0,06 % · +0,51 % | igual | +0,15 % · −0,06 % · +0,47 % |
+
+ᵈ Explicado por la EoS del R152a. EES V10, con las mismas entradas, queda a −0,23 %. La diferencia entre el código y EES (0,37 %) coincide con la diferencia de propiedades ya medida para el R152a (+0,41 % en Δh). Si además ṁ se calcula con el latente de EES, el resultado sale +0,61 %. El dato de Yari cae dentro de esa dispersión.
+
+**Resultado:** 14 comparaciones pasan y 1 queda explicada, de 15. Todas las η coinciden.
+
+- **El lazo con subenfriamiento queda probado:** era la limitación declarada de la primera corrida.
+- **En agua, DWSIM-CoolProp sí coincide** (+0,2 % o menos): la turbina no arranca en saturación. Esto confirma que su falla es solo en los estados saturados.
+- **DWSIM-PR con R152a vuelve a fallar en la bomba** (η = 7,1), igual que en la Tabla 6.
+
+**La misma prueba refuta otra vez la hipótesis de las propiedades de EES para VP-04.** Si Yari hubiera calculado ṁ con el latente de EES, el R1234yf daría −3,9 %, todavía lejos.
+
 ## Pendientes
 
 1. VP-04: buscar en Yari (o en su versión de EES) qué propiedades o qué pinch usó para el R1234yf.
@@ -84,9 +107,9 @@ Todas las variables con su veredicto están en [`reporte_tablas.md`](reporte_tab
 
 | Carpeta | Contenido | Cómo abrirlo |
 |---|---|---|
-| `ees/archivos_ees/` | 11 archivos `.EES` ya resueltos, uno por punto | doble clic en EES; ventana Solution |
+| `ees/archivos_ees/` | 17 archivos `.EES` ya resueltos, uno por punto | doble clic en EES; ventana Solution |
 | `ees/puntos/` | el mismo programa en texto (`.txt`) y su salida CSV | EES → Open, o cualquier editor |
-| `dwsim/puntos/` | 21 diagramas `.dwxmz` resueltos (`<punto>_coolprop` y `<punto>_pr`) | DWSIM → Open |
+| `dwsim/puntos/` | 33 diagramas `.dwxmz` resueltos (`<punto>_coolprop` y `<punto>_pr`) | DWSIM → Open |
 
 En los `.dwxmz`, los calores de los Heater/Cooler quedaron fijos con el valor del lazo ya convergido. Si se recalcula en DWSIM, da el mismo estado. Las corrientes AUX son las auxiliares de la guía, a (P_ev, T_fuente) y (P_cd, T_sumidero).
 

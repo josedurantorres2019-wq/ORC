@@ -74,6 +74,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--guardar", action="store_true", help=f"agrega todo a {RUTA.name}")
     ap.add_argument("--entradas", type=Path, default=None, help="CSV con las entradas en modo R")
+    ap.add_argument("--punto", action="append", help="con --guardar: solo estos puntos al Excel")
     a = ap.parse_args()
     defs = d.cargar()
     todas, entradas = [], []
@@ -82,11 +83,12 @@ def main() -> None:
         if punto.get("tipo") == "componentes":
             valores, id_corrida, nivel, msg = componentes(punto, b), None, "V1", "bomba y turbina"
         else:
-            valores, id_corrida, msg, ent = _corrida(caso, punto, b, defs, a.guardar)
+            guardar = a.guardar and (not a.punto or punto["id_punto"] in a.punto)
+            valores, id_corrida, msg, ent = _corrida(caso, punto, b, defs, guardar)
             nivel = "V3"
             entradas.append({"id_punto": punto["id_punto"], "fluido_coolprop": b.fluido, **ent})
         filas = _filas(punto, valores, nivel, id_corrida)
-        todas += filas
+        todas += [f for f in filas if not a.punto or f["id_punto"] in a.punto]
         print(f"\n{punto['id_punto']} ({caso}, {punto['fluido']}): {msg}")
         for f in filas:
             err = f"{100 * f['error_rel']:+.3f} %" if f["error_rel"] is not None else "-"

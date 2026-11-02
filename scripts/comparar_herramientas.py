@@ -100,6 +100,7 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--guardar", action="store_true")
+    ap.add_argument("--punto", action="append", help="con --guardar: solo estos puntos al Excel")
     a = ap.parse_args()
     tol = yaml.safe_load((V / "tolerancias.yaml").read_text(encoding="utf-8"))
     causas = yaml.safe_load((V / "causas.yaml").read_text(encoding="utf-8"))
@@ -148,7 +149,8 @@ def main() -> None:
                              tipo_tolerancia=t["tipo"], causa=causa)
                 fila_t[h], fila_t[f"err_{h}"], fila_t[f"ver_{h}"] = ref, (
                     k["error_abs"] if t["tipo"] == "abs" else k["error_rel"]), k["veredicto"]
-                excel.append(k)
+                if not a.punto or pid in a.punto:
+                    excel.append(k)
             tabla.append(fila_t)
     cols = ["id_punto", "comparacion", "variable", "unidad", "paper", "Python"]
     for h in HERRAMIENTAS:

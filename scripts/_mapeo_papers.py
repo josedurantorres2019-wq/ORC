@@ -36,7 +36,11 @@ def _presion(b, spec: dict) -> float:
 
 
 def _h(b, P: float, spec: dict) -> float:
-    return b.h(P, q=spec["q"]) if "q" in spec else b.h(P, T=spec["T_degC"] + K)
+    if "q" in spec:
+        return b.h(P, q=spec["q"])
+    if "subenfriado_K" in spec:                # líquido subenfriado (Çengel 10-23)
+        return b.h(P, T=b.T_sat(P) - spec["subenfriado_K"])
+    return b.h(P, T=spec["T_degC"] + K)
 
 
 def _eta_t(b, spec, P_cd: float, e3) -> float:
@@ -46,9 +50,11 @@ def _eta_t(b, spec, P_cd: float, e3) -> float:
     return (e3.h - h4) / (e3.h - b.h(P_cd, s=e3.s))
 
 
-def _m(spec: dict, b, *, P_ev: float, h2: float, h3: float) -> float:
+def _m(spec: dict, b, *, P_ev: float, h2: float, h3: float, w_net: float) -> float:
     if "kg_s" in spec:
         return spec["kg_s"]
+    if "desde_W_net_kW" in spec:           # Çengel 10-21: el enunciado da la potencia neta
+        return spec["desde_W_net_kW"] / w_net
     w = _agua()
     if "pinch" in spec:                    # pinch en el punto de burbuja (Yari, Campos)
         p = spec["pinch"]
@@ -73,7 +79,7 @@ def entradas_modo_R(punto: dict, b) -> dict:
     e3 = estado_Ph(b, P_ev, h3, m=1.0, etiqueta="3")
     eta_t = _eta_t(b, punto["eta_t"], P_cd, e3)
     e4, _ = turbina.resolver(e3, b, P_salida=P_cd, eta_t=eta_t)
-    m = _m(punto["m"], b, P_ev=P_ev, h2=e2.h, h3=h3)
+    m = _m(punto["m"], b, P_ev=P_ev, h2=e2.h, h3=h3, w_net=(h3 - e4.h) - (e2.h - e1.h))
     eps_rec, q_rec = None, 0.0
     if "Q_rec_kW" in punto:
         q_rec = punto["Q_rec_kW"] / m
@@ -93,6 +99,9 @@ def salidas(r: dict, punto: dict) -> dict:
         el = punto["electrico"]
         s["W_el"] = el["eta_gen"] * r["Wt"] - r["Wp"] / el["eta_motor"]
         s["eta_el"] = s["W_el"] / r["Qin"]
+    if "enfriamiento" in punto:            # calentamiento del agua de enfriamiento (Çengel 10-21)
+        en = punto["enfriamiento"]
+        s["dT_enfriamiento"] = r["Qout"] / (en["m_kg_s"] * en["cp_kJ_kgK"])
     return s
 
 
