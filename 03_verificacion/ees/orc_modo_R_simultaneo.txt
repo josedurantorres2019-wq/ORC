@@ -1,0 +1,45 @@
+{ ORC subcritico simple, modo R, cierre B: SISTEMA SIMULTANEO (ampliacion v1.0.0, familia F7).
+  Mismas ecuaciones que orc_modo_R.txt, pero los lazos (h1 del condensador y q_rec_kg del
+  recuperador) quedan IMPLICITOS: EES los resuelve con Newton junto con todo el sistema, que es un
+  metodo numerico distinto de la sustitucion sucesiva del codigo Python. Los valores iniciales van
+  en $VarInfo (los escribe scripts/v1/correr_ees_simultaneo.py en el lugar de @GUESSES@), porque el
+  arranque por defecto (todo en 1) saca las funciones de propiedades de su rango.
+}
+$UnitSystem SI Mass K kPa kJ
+
+@ENTRADAS@
+
+h_1min = Enthalpy(F$, P=P_cd, T=T_sumidero)
+h[1] = h_4r - eps_cond*(h_4r - h_1min)
+T[1] = Temperature(F$, P=P_cd, h=h[1])
+s[1] = Entropy(F$, P=P_cd, h=h[1])
+
+h_2s = Enthalpy(F$, P=P_ev, s=s[1])
+h[2] = h[1] + (h_2s - h[1])/eta_p
+T[2] = Temperature(F$, P=P_ev, h=h[2])
+
+q_max = Min(h[4] - Enthalpy(F$, P=P_cd, T=T[2]), Enthalpy(F$, P=P_ev, T=T[4]) - h[2])
+q_rec_kg = eps_rec*q_max
+h_2r = h[2] + q_rec_kg
+h_4r = h[4] - q_rec_kg
+
+h_3max = Enthalpy(F$, P=P_ev, T=T_fuente)
+h[3] = h_2r + eps_ev*(h_3max - h_2r)
+T[3] = Temperature(F$, P=P_ev, h=h[3])
+s[3] = Entropy(F$, P=P_ev, h=h[3])
+
+h_4s = Enthalpy(F$, P=P_cd, s=s[3])
+h[4] = h[3] - eta_t*(h[3] - h_4s)
+T[4] = Temperature(F$, P=P_cd, h=h[4])
+x[4] = Quality(F$, P=P_cd, h=h[4])
+
+Q_in = m*(h[3] - h_2r)
+Q_out = m*(h_4r - h[1])
+Q_rec = m*q_rec_kg
+W_t = m*(h[3] - h[4])
+W_p = m*(h[2] - h[1])
+W_net = W_t - W_p
+eta = W_net/Q_in
+dh_s = h[3] - h_4s
+
+@GUESSES@

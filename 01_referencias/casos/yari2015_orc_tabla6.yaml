@@ -103,7 +103,7 @@ verificacion:
     P_ev: {T_sat_degC: 84}
     comparar:
       - {variable: eta, valor_ref: 0.07787, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
-      - {variable: Wnet, valor_ref: 1816, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719", nota: "SIN CAUSA (2026-11-02). Localizada en ṁ: η coincide (+0,05 pp) y W = η·Q_in; el ṁ de Yari sería 3,6 % mayor, equivalente a un pinch de 9,1 K con CoolProp (con el nuestro el pinch cae en el punto de burbuja a 10,0 K). La causa anterior (EoS de EES 2015) queda refutada: EES V10 da −3,2 % y su calor latente a 84 °C es +0,8 % mayor que el de CoolProp, en sentido contrario"}
+      - {variable: Wnet, valor_ref: 1816, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719", nota: "SIN CAUSA (2026-11-02). Localizada en ṁ: η coincide (+0,05 pp) y W = η·Q_in; el ṁ de Yari sería 3,6 % mayor, equivalente a un pinch de 9,1 K con CoolProp (con el nuestro el pinch cae en el punto de burbuja a 10,0 K). La causa anterior (EoS de EES 2015) queda refutada: EES V10 da −3,2 % y su calor latente a 84 °C es +0,8 % mayor que el de CoolProp, en sentido contrario. Ampliación v1.0.0 (2026-11-02): contra la Fig. 5 digitalizada el error del código crece de forma suave de −0,7 % (65 °C) a −3,5 % (84 °C) al acercarse a T_c; ningún supuesto único del modelo (pinch 9,06 K, η_t 0,876, T_cond 38,9 °C; η_p no alcanza) reproduce esa forma (RMS 0,9–2,8 %). Causa más probable: las propiedades del R1234yf que usó Yari cerca del punto crítico [NV]"}
   - <<: *yari
     id_punto: VP-C-isobutano
     fluido: IsoButane

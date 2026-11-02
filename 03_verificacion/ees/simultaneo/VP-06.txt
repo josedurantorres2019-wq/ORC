@@ -1,0 +1,62 @@
+
+$UnitSystem SI Mass K kPa kJ
+
+F$ = 'MM'
+P_ev = 974
+P_cd = 12
+T_fuente = 619.15
+T_sumidero = 298.15
+eps_ev = 0.4815016721685896
+eps_cond = 0.8809865478843641
+eta_t = 0.75
+eta_p = 0.7
+m = 25
+eps_rec = 0.961945259866601
+
+h_1min = Enthalpy(F$, P=P_cd, T=T_sumidero)
+h[1] = h_4r - eps_cond*(h_4r - h_1min)
+T[1] = Temperature(F$, P=P_cd, h=h[1])
+s[1] = Entropy(F$, P=P_cd, h=h[1])
+
+h_2s = Enthalpy(F$, P=P_ev, s=s[1])
+h[2] = h[1] + (h_2s - h[1])/eta_p
+T[2] = Temperature(F$, P=P_ev, h=h[2])
+
+q_max = Min(h[4] - Enthalpy(F$, P=P_cd, T=T[2]), Enthalpy(F$, P=P_ev, T=T[4]) - h[2])
+q_rec_kg = eps_rec*q_max
+h_2r = h[2] + q_rec_kg
+h_4r = h[4] - q_rec_kg
+
+h_3max = Enthalpy(F$, P=P_ev, T=T_fuente)
+h[3] = h_2r + eps_ev*(h_3max - h_2r)
+T[3] = Temperature(F$, P=P_ev, h=h[3])
+s[3] = Entropy(F$, P=P_ev, h=h[3])
+
+h_4s = Enthalpy(F$, P=P_cd, s=s[3])
+h[4] = h[3] - eta_t*(h[3] - h_4s)
+T[4] = Temperature(F$, P=P_cd, h=h[4])
+x[4] = Quality(F$, P=P_cd, h=h[4])
+
+Q_in = m*(h[3] - h_2r)
+Q_out = m*(h_4r - h[1])
+Q_rec = m*q_rec_kg
+W_t = m*(h[3] - h[4])
+W_p = m*(h[2] - h[1])
+W_net = W_t - W_p
+eta = W_net/Q_in
+dh_s = h[3] - h_4s
+
+$VarInfo h[1] Guess=2.000000
+$VarInfo h[2] Guess=3.849583
+$VarInfo h[3] Guess=478.076535
+$VarInfo h[4] Guess=409.231844
+$VarInfo h_2r Guess=181.609583
+$VarInfo h_4r Guess=231.471844
+$VarInfo T[1] Guess=314.288216
+$VarInfo T[2] Guess=314.876180
+$VarInfo T[3] Guess=476.421630
+$VarInfo T[4] Guess=424.783741
+$VarInfo q_rec_kg Guess=177.760000
+$VarInfo q_max Guess=407.231844
+
+$Export /A 'D:\Desktop\ORC\03_verificacion\ees\simultaneo\VP-06_sim.csv' W_net, Q_in, T[1], T[2], T[3], T[4], eta

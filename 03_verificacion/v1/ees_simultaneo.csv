@@ -1,0 +1,23 @@
+id_punto,converge,nota,W_net_simultaneo,W_net_procedure,dW_rel,dQin_rel,dT_max_K,veredicto
+VP-06,False, ventanas: {'Error'},,,,,,
+VP-13,True,,31.0386539,31.0386539,0.0,0.0,0.0,pasa
+VP-01,True,,709.963522,709.963522,0.0,0.0,0.0,pasa
+VP-05,True,,6171.61261,6171.61261,0.0,0.0,0.0,pasa
+VP-14,True,,18045.1951,18045.1951,0.0,0.0,0.0,pasa
+VP-15,True,,44992.191,44992.191,0.0,0.0,0.0,pasa
+VP-16a,True,,976.947515,976.947515,0.0,0.0,0.0,pasa
+VP-16b,True,,1299.60535,1299.60535,0.0,0.0,0.0,pasa
+VP-16c,True,,1452.14738,1452.14738,0.0,0.0,0.0,pasa
+VP-17,True,,124976.83,124976.83,0.0,0.0,0.0,pasa
+VP-18,False, ventanas: {'Error'},,,,,,
+VP-03,True,,1450.12936,1450.12936,0.0,0.0,0.0,pasa
+VP-04,False, ventanas: {'Error'},,,,,,
+VP-C-isobutano,True,,1476.62466,1476.62466,0.0,0.0,0.0,pasa
+VP-C-propano,True,,1632.11896,1632.11896,0.0,0.0,0.0,pasa
+VP-C-R134a,True,,1444.7666,1444.7666,0.0,0.0,0.0,pasa
+VP-C-R152a,False, ventanas: {'Error'},,,,,,
+VP-C-amoniaco,True,,1376.02361,1376.02361,0.0,0.0,0.0,pasa
+VP-T7-nbutano,True,,1110.80432,1110.80432,0.0,0.0,0.0,pasa
+VP-T7-isobutano,True,,1186.94752,1186.94752,0.0,0.0,0.0,pasa
+VP-T7-R152a,False, ventanas: {'Error'},,,,,,
+VP-T7-amoniaco,True,,1040.5018,1040.5018,0.0,0.0,0.0,pasa

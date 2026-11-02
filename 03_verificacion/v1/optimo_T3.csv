@@ -1,0 +1,8 @@
+id_punto,fluido,T3_yari,W_yari,T3_codigo,W_max_codigo,W_codigo_en_T3_yari,interior,veredicto,nota,eta_sube_y_m_baja
+VP-03,n-Butane,76.32,1450,76.35,1448.77,1448.77,True,pasa,T3* +0.03 K; Ẇ_max -0.08 %,True
+VP-C-isobutano,IsoButane,77.33,1479,77.0,1477.0,1476.9,True,pasa,T3* -0.33 K; Ẇ_max -0.14 %,True
+VP-C-R152a,R152a,77.77,1476,77.6,1472.17,1472.14,True,pasa,T3* -0.17 K; Ẇ_max -0.26 %,True
+VP-C-amoniaco,Ammonia,75.53,1377,75.5,1375.89,1375.89,True,pasa,T3* -0.03 K; Ẇ_max -0.08 %,True
+VP-04,R1234yf,84.0,1816,84.0,1752.79,1752.23,False,pasa,límite de Yari: dẆ/dT3 = +11.3 kW/K en 84.0 °C; T3* del código 84.0 °C,True
+VP-C-propano,Propane,86.9,1635,87.0,1634.39,1633.95,False,pasa,límite de Yari: dẆ/dT3 = +2.8 kW/K en 86.9 °C; T3* del código 87.0 °C,True
+VP-C-R134a,R134a,81.67,1580.9,81.05,1579.41,1579.09,True,pasa,T3* -0.62 K; Ẇ_max -0.09 %,True

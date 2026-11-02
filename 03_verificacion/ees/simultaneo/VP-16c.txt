@@ -1,0 +1,62 @@
+
+$UnitSystem SI Mass K kPa kJ
+
+F$ = 'Water'
+P_ev = 15000
+P_cd = 10
+T_fuente = 1000.0
+T_sumidero = 298.15
+eps_ev = 0.9124954657519135
+eps_cond = 0.9567398134421949
+eta_t = 1.0
+eta_p = 1.0
+m = 1
+eps_rec = 0
+
+h_1min = Enthalpy(F$, P=P_cd, T=T_sumidero)
+h[1] = h_4r - eps_cond*(h_4r - h_1min)
+T[1] = Temperature(F$, P=P_cd, h=h[1])
+s[1] = Entropy(F$, P=P_cd, h=h[1])
+
+h_2s = Enthalpy(F$, P=P_ev, s=s[1])
+h[2] = h[1] + (h_2s - h[1])/eta_p
+T[2] = Temperature(F$, P=P_ev, h=h[2])
+
+q_max = Min(h[4] - Enthalpy(F$, P=P_cd, T=T[2]), Enthalpy(F$, P=P_ev, T=T[4]) - h[2])
+q_rec_kg = eps_rec*q_max
+h_2r = h[2] + q_rec_kg
+h_4r = h[4] - q_rec_kg
+
+h_3max = Enthalpy(F$, P=P_ev, T=T_fuente)
+h[3] = h_2r + eps_ev*(h_3max - h_2r)
+T[3] = Temperature(F$, P=P_ev, h=h[3])
+s[3] = Entropy(F$, P=P_ev, h=h[3])
+
+h_4s = Enthalpy(F$, P=P_cd, s=s[3])
+h[4] = h[3] - eta_t*(h[3] - h_4s)
+T[4] = Temperature(F$, P=P_cd, h=h[4])
+x[4] = Quality(F$, P=P_cd, h=h[4])
+
+Q_in = m*(h[3] - h_2r)
+Q_out = m*(h_4r - h[1])
+Q_rec = m*q_rec_kg
+W_t = m*(h[3] - h[4])
+W_p = m*(h[2] - h[1])
+W_net = W_t - W_p
+eta = W_net/Q_in
+dh_s = h[3] - h_4s
+
+$VarInfo h[1] Guess=1.000000
+$VarInfo h[2] Guess=16.096213
+$VarInfo h[3] Guess=3392.325817
+$VarInfo h[4] Guess=1924.432329
+$VarInfo h_2r Guess=16.096213
+$VarInfo h_4r Guess=1924.432329
+$VarInfo T[1] Guess=318.956329
+$VarInfo T[2] Guess=319.454510
+$VarInfo T[3] Guess=873.150000
+$VarInfo T[4] Guess=318.956329
+$VarInfo q_rec_kg Guess=0.000000
+$VarInfo q_max Guess=1923.432329
+
+$Export /A 'D:\Desktop\ORC\03_verificacion\ees\simultaneo\VP-16c_sim.csv' W_net, Q_in, T[1], T[2], T[3], T[4], eta

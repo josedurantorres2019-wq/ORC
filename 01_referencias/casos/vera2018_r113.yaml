@@ -1,0 +1,27 @@
+# Ampliación de la verificación sobre el código v1.0.0 (familia F1, contraste V5, decisión A-4).
+# Vera-Romero et al. 2018, ORC geotérmico de Los Negritos, punto del R113 (§ 3 y Tabla 4).
+# Confianza BAJA (revista de baja exigencia; el paper no da el estado 3). Solo contraste: no cuenta
+# como benchmark. Nota de la bóveda: referencias/vera-romero-2018-orc-geotermico-los-negritos.md
+id: vera2018_r113
+tipo: contraste de coherencia (V5)
+
+# Tolerancias fijadas el 2026-11-02 antes de correr: ±0,5 % o media unidad de la última cifra.
+verificacion:
+  - id_punto: VP-18
+    fluido: R113
+    T_fuente_degC: 92              # declarado (Tabla 4)
+    T_sumidero_degC: 19            # declarado: T ambiente media
+    P_ev: {kPa: 129}               # declarado: 0,129 MPa
+    P_cd: {kPa: 52}                # declarado: 0,052 MPa
+    # derivado: h3 = h2 + Q/ṁ con Q = 221,94 kW y ṁ = 1,197 kg/s (CoolProp/REFPROP, misma EoS que Vera)
+    # → 81,88 °C, vapor sobrecalentado 26,8 K (el texto habla de «vapor sobrecalentado»)
+    estado_3: {T_degC: 81.88}
+    estado_1: {q: 0}               # declarado: líquido saturado
+    eta_t: 0.85                    # declarado
+    eta_p: 0.80                    # declarado
+    m: {kg_s: 1.197}               # declarado
+    comparar:
+      # La bomba NO depende del estado 3: es la comprobación independiente del punto.
+      - {variable: Wp, valor_ref: 0.074, unidad: kW, tolerancia: 0.007, tipo: rel, referencia: "Vera 2018, § 3 (0,074 kW, ±0,0005)"}
+      # derivado: W_eje = 13,04 kWe / η_GE 0,96 (Ec. 6 de Vera: W_EG = (W_ST − W_P)·η_GE)
+      - {variable: Wnet, valor_ref: 13.583, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Vera 2018, § 3 (13,04 kWe / 0,96, derivado)", causa: "Redondeo de las presiones que publica Vera (0,052 y 0,129 MPa, ±0,5 kPa): propagado por Monte Carlo da U95 = 1,2 % en Ẇ_eje, y el error (+0,74 %) cabe en él (scripts/v1/incertidumbre_entradas.py). La bomba, que no depende del estado 3, coincide (+0,19 %). Hallado el 2026-11-02, después de la corrida"}
