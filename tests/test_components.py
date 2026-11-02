@@ -111,6 +111,17 @@ def test_recuperador_con_subenfriamiento_no_cruza(fluido, eps):
     assert (e4r.s - e4.s) + (e2r.s - e2.s) >= -1e-12
 
 
+def test_recuperador_en_cero_sin_gradiente_no_falla(fluido):
+    """H-1 (v1.0.1): ε = 0 es «sin recuperador» aunque T4 ≤ T2; no hay calor que transferir."""
+    _, b = fluido
+    P_cd, P_ev = 0.05 * b.P_crit, 0.6 * b.P_crit
+    e4 = _liq(b, P_cd)
+    e2 = estado_Ph(b, P_ev, b.h(P_ev, T=e4.T + 1.0), m=M, etiqueta="2")
+    e4r, e2r, r = recuperador.resolver(e4, e2, b, eps=0.0)
+    assert r["Qrec"] == 0.0 and e4r.h == e4.h and e2r.h == e2.h
+    assert (e4r.etiqueta, e2r.etiqueta) == ("4r", "2r")
+
+
 def test_recuperador_sin_gradiente_falla(fluido):
     """Revisión D2: T4 ≤ T2 → el punto no existe con recuperador."""
     from src.errores import CicloSinSolucionError

@@ -6,13 +6,14 @@ Forma de efectividad del ε_reg del Kalina, con el calor máximo del lado que LI
     h2r   = h2 + (h4 − h4r)              balance de energía con el mismo ṁ en los dos lados
     Q̇_rec = ṁ (h4 − h4r)                 carga interna (no cruza la frontera del ciclo)
 
-Desviación de D-15 §2.3 (revisión termodinámica 2026-10-31, D1; PENDIENTE de aprobación):
-§2.3 usa solo el lado caliente, h4 − h(P_cd, T2). Si T2 < T_sat(P_cd) (ΔT_sc > 0) ese
-término incluye el calor latente y el lado frío no puede absorberlo: cruce de temperaturas
-(2.ª ley). Cuando el lado caliente limita, las dos fórmulas coinciden.
+Modifica D-15 §2.3 (revisión termodinámica 2026-10-31, D1; APROBADA por el usuario el
+2026-11-02): §2.3 usaba solo el lado caliente, h4 − h(P_cd, T2). Si T2 < T_sat(P_cd)
+(ΔT_sc > 0) ese término incluye el calor latente y el lado frío no puede absorberlo: cruce de
+temperaturas (2.ª ley). Cuando el lado caliente limita, las dos fórmulas coinciden.
 
 Si T4 ≤ T2 no hay recuperación posible (el calor iría del frío al caliente): el punto no
-existe con recuperador (revisión D2).
+existe con recuperador (revisión D2). Excepción H-1 (v1.0.1): ε = 0 equivale a apagarlo y
+devuelve los estados sin cambio aunque T4 ≤ T2.
 
 Hipótesis: H1, H2 (sin pérdidas al ambiente: todo lo que cede 4 lo recibe 2),
 H3 ΔP = 0 en ambos lados, H4, H12 contracorriente. ε_rec = 0 equivale a apagarlo.
@@ -36,6 +37,10 @@ def resolver(caliente: EstadoTermo, fria: EstadoTermo, backend: PropertyBackend,
         raise ValueError("el recuperador exige el mismo caudal ṁ en los dos lados")
     if not 0.0 <= eps <= 1.0:
         raise ValueError(f"eps_rec={eps} fuera de [0, 1]")
+    if eps == 0.0:                       # H-1 (v1.0.1): ε = 0 es «sin recuperador», aun con T4 ≤ T2
+        return (estado_Ph(backend, caliente.P, caliente.h, m=caliente.m, etiqueta="4r"),
+                estado_Ph(backend, fria.P, fria.h, m=fria.m, etiqueta="2r"),
+                {"Qrec": 0.0, "q_max": 0.0})
     if caliente.T <= fria.T:
         raise CicloSinSolucionError(f"T4={caliente.T:.3f} K <= T2={fria.T:.3f} K: el "
                                     "recuperador no puede transferir calor")

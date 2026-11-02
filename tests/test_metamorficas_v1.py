@@ -10,7 +10,6 @@ from __future__ import annotations
 import pytest
 
 from src.cycle_solver import resolver_ciclo_R
-from src.errores import CicloSinSolucionError
 from src.exergy import calcular_exergia
 from src.properties.coolprop_adapter import CoolPropAdapter
 
@@ -54,17 +53,13 @@ def test_mejor_turbina_mas_potencia(punto):
 def test_recuperador_en_cero_es_no_tenerlo(punto):
     """ε_rec = 0 da el mismo ciclo que «sin recuperador».
 
-    Hallazgo H-1 (2026-11-02, para v1.0.1): si T4 ≤ T2, `recuperador.resolver` rechaza ε_rec = 0
-    con CicloSinSolucionError aunque no haya calor que transferir. No da un resultado erróneo:
-    rechaza una entrada válida. Queda como xfail hasta la v1.0.1.
+    Hallazgo H-1 (2026-11-02), corregido en la v1.0.1: antes, si T4 ≤ T2, `recuperador.resolver`
+    rechazaba ε_rec = 0 con CicloSinSolucionError aunque no hubiera calor que transferir.
     """
     _, ent, r = _ciclo(punto)
     if ent["eps_rec"] is not None:
         pytest.skip("el punto tiene recuperador")
-    try:
-        _, _, r0 = _ciclo(punto, eps_rec=0.0)
-    except CicloSinSolucionError:
-        pytest.xfail("H-1: ε_rec = 0 rechazado con T4 ≤ T2")
+    _, _, r0 = _ciclo(punto, eps_rec=0.0)
     assert r0["Wnet"] == pytest.approx(r["Wnet"], rel=1e-9)
     assert r0["Qrec"] == pytest.approx(0.0, abs=1e-9)
 
