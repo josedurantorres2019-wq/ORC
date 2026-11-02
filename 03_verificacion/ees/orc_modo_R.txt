@@ -1,23 +1,54 @@
 { ORC subcritico simple, modo R, cierre B del condensador (D-15, D-16).
-  Programa para EES: copiar todo este texto en la ventana Equations y resolver (F2).
-  Plan de verificacion, niveles V2-V3. Las entradas de cada punto estan en
-  03_verificacion/entradas_puntos.csv (las mismas que usa el codigo Python).
+  Programa para EES. Plan de verificacion, niveles V2-V3. Las entradas de cada punto estan
+  en 03_verificacion/entradas_puntos.csv (las mismas que usa el codigo Python, sacadas de
+  los papers). scripts/correr_ees.py genera un programa por punto y lo corre.
 
-  EES resuelve todas las ecuaciones a la vez: el lazo en h1 (condensador) y el del
-  recuperador quedan implicitos. Por eso es una comprobacion independiente del metodo
-  numerico del Python (sustitucion sucesiva).
+  LAZOS (h1 del condensador y q_rec del recuperador)
+  En el sistema simultaneo EES arranca todas las variables en 1 y las funciones de
+  propiedades no convergen (p. ej. h = 1 kJ/kg a 12 kPa con MM). Un .txt no guarda valores
+  iniciales, asi que los lazos se iteran en el PROCEDURE lazo, desde liquido saturado y con
+  propiedades de EES. El resto del sistema queda explicito y EES calcula los residuos
+  res_h1 y res_rec con las ecuaciones originales del cierre: deben quedar en ~0.
 
   CUIDADOS
   - Estado de referencia: EES y CoolProp pueden tener otro cero de h y s. Comparar
     diferencias (Q, W, dh_s, eta, T, x), nunca h absoluta.
-  - Nombres de fluido [no verificados en tu version de EES]: 'n-Butane', 'R1234yf',
-    'Isobutane', 'Propane', 'R134a', 'R152a', 'Ammonia', 'Steam_IAPWS' (agua IAPWS-95,
-    la misma formulacion que CoolProp). MM: buscar en Options > Function Info > Fluid
-    Properties si existe; si no existe, VP-06 queda sin EES.
-  - Si no converge: Options > Variable Info, poner valores iniciales razonables
-    (T[1] cerca de T_sat(P_cd), T[3] cerca de T_sat(P_ev)) y limites inferiores > 0.
+  - Fluidos de EES V10: 'n-Butane', 'R1234yf', 'Isobutane', 'Propane', 'R134a', 'R152a',
+    'Ammonia', 'MM', 'Water'.
+  - EES no distingue mayusculas: Q_rec (kW) y q_rec serian la misma variable y el
+    sistema queda incompatible; por eso el calor por kg se llama q_rec_kg.
   - Recuperador apagado: eps_rec = 0 (en el CSV la celda vacia significa apagado).
+  - Sin exergia: el estado muerto disponible venia del Kalina y no se usa aqui.
 }
+
+PROCEDURE lazo(F$, P_ev, P_cd, T_fuente, T_sumidero, eps_ev, eps_cond, eps_rec, eta_t, eta_p : h1, q)
+  h_1min := Enthalpy(F$, P=P_cd, T=T_sumidero)
+  h_3max := Enthalpy(F$, P=P_ev, T=T_fuente)
+  h1 := Enthalpy(F$, P=P_cd, x=0)
+  q := 0
+  i := 0
+  REPEAT
+    i := i + 1
+    s1 := Entropy(F$, P=P_cd, h=h1)
+    h2 := h1 + (Enthalpy(F$, P=P_ev, s=s1) - h1)/eta_p
+    T2 := Temperature(F$, P=P_ev, h=h2)
+    j := 0
+    REPEAT
+      j := j + 1
+      h3 := h2 + q + eps_ev*(h_3max - h2 - q)
+      s3 := Entropy(F$, P=P_ev, h=h3)
+      h4 := h3 - eta_t*(h3 - Enthalpy(F$, P=P_cd, s=s3))
+      T4 := Temperature(F$, P=P_cd, h=h4)
+      q_nuevo := eps_rec*Min(h4 - Enthalpy(F$, P=P_cd, T=T2), Enthalpy(F$, P=P_ev, T=T4) - h2)
+      dq := abs(q_nuevo - q)
+      q := q_nuevo
+    UNTIL (dq < 1e-9) or (j > 500)
+    h4r := h4 - q
+    h1_nuevo := h4r - eps_cond*(h4r - h_1min)
+    dh := abs(h1_nuevo - h1)
+    h1 := h1_nuevo
+  UNTIL (dh < 1e-9) or (i > 500)
+END
 
 $UnitSystem SI Mass K kPa kJ
 
@@ -33,12 +64,13 @@ eps_rec = 0                      { celda vacia del CSV = 0 }
 eta_t = 0.85
 eta_p = 0.85
 m = 47.61630878078749            { kg/s }
-T0 = 300.032917                  { K, estado muerto de definiciones.yaml }
-P0 = 101.325                     { kPa }
+
+{ ===== Lazos: h1 y q_rec_kg (ver encabezado) ===== }
+CALL lazo(F$, P_ev, P_cd, T_fuente, T_sumidero, eps_ev, eps_cond, eps_rec, eta_t, eta_p : h[1], q_rec_kg)
 
 { ===== Condensador (cierre B): estado 1 sale de eps_cond ===== }
 h_1min = Enthalpy(F$, P=P_cd, T=T_sumidero)
-h[1] = h_4r - eps_cond*(h_4r - h_1min)
+res_h1 = h[1] - (h_4r - eps_cond*(h_4r - h_1min))
 T[1] = Temperature(F$, P=P_cd, h=h[1])
 s[1] = Entropy(F$, P=P_cd, h=h[1])
 
@@ -50,13 +82,11 @@ s[2] = Entropy(F$, P=P_ev, h=h[2])
 
 { ===== Recuperador (q_max del lado que limita, como recuperador.py) ===== }
 q_max = Min(h[4] - Enthalpy(F$, P=P_cd, T=T[2]), Enthalpy(F$, P=P_ev, T=T[4]) - h[2])
-q_rec = eps_rec*q_max
-h_2r = h[2] + q_rec
-h_4r = h[4] - q_rec
-s_2r = Entropy(F$, P=P_ev, h=h_2r)
-s_4r = Entropy(F$, P=P_cd, h=h_4r)
+res_rec = q_rec_kg - eps_rec*q_max
+h_2r = h[2] + q_rec_kg
+h_4r = h[4] - q_rec_kg
 
-{ ===== Evaporador (efectividad sobre el lado del fluido, como eps_HRVG del Kalina) ===== }
+{ ===== Evaporador (efectividad sobre el lado del fluido) ===== }
 h_3max = Enthalpy(F$, P=P_ev, T=T_fuente)
 h[3] = h_2r + eps_ev*(h_3max - h_2r)
 T[3] = Temperature(F$, P=P_ev, h=h[3])
@@ -66,36 +96,17 @@ s[3] = Entropy(F$, P=P_ev, h=h[3])
 h_4s = Enthalpy(F$, P=P_cd, s=s[3])
 h[4] = h[3] - eta_t*(h[3] - h_4s)
 T[4] = Temperature(F$, P=P_cd, h=h[4])
-s[4] = Entropy(F$, P=P_cd, h=h[4])
 x[4] = Quality(F$, P=P_cd, h=h[4])       { -100/100 fuera de la campana en EES }
 
 { ===== Globales (las mismas definiciones de cycle_solver.py) ===== }
 Q_in = m*(h[3] - h_2r)
 Q_out = m*(h_4r - h[1])
-Q_rec = m*q_rec
+Q_rec = m*q_rec_kg
 W_t = m*(h[3] - h[4])
 W_p = m*(h[2] - h[1])
 W_net = W_t - W_p
 eta = W_net/Q_in
 dh_s = h[3] - h_4s
-r_bw = W_p/W_t
 N2 = abs(Q_in - Q_out - W_net)/Q_in
 
-{ ===== Exergia (las mismas definiciones de exergy.py) ===== }
-Sgen_ev = m*(s[3] - s_2r) - Q_in/T_fuente
-Sgen_t = m*(s[4] - s[3])
-Sgen_rec = m*((s_4r - s[4]) + (s_2r - s[2]))
-Sgen_cd = m*(s[1] - s_4r) + Q_out/T_sumidero
-Sgen_p = m*(s[2] - s[1])
-Ed_ev = T0*Sgen_ev
-Ed_t = T0*Sgen_t
-Ed_rec = T0*Sgen_rec
-Ed_cd = T0*Sgen_cd
-Ed_p = T0*Sgen_p
-Ex_Qin = Q_in*(1 - T0/T_fuente)
-eta_II = W_net/Ex_Qin
-
-{ PARA TODOS LOS PUNTOS: Tables > New Parametric Table con las columnas de entrada
-  (F$ no puede ir en la tabla: hacer una tabla por fluido, o copiar el programa por fluido).
-  Borrar de arriba las lineas de las entradas que van en la tabla. Resolver con F3 y
-  exportar la tabla a CSV con las columnas de 03_verificacion/README.md. }
+{ PARA TODOS LOS PUNTOS: python -m scripts.correr_ees }

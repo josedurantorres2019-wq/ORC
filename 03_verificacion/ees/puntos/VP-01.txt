@@ -1,0 +1,89 @@
+{ Punto VP-01: generado por scripts/correr_ees.py desde entradas_puntos.csv y orc_modo_R.txt. No editar a mano. }
+PROCEDURE lazo(F$, P_ev, P_cd, T_fuente, T_sumidero, eps_ev, eps_cond, eps_rec, eta_t, eta_p : h1, q)
+  h_1min := Enthalpy(F$, P=P_cd, T=T_sumidero)
+  h_3max := Enthalpy(F$, P=P_ev, T=T_fuente)
+  h1 := Enthalpy(F$, P=P_cd, x=0)
+  q := 0
+  i := 0
+  REPEAT
+    i := i + 1
+    s1 := Entropy(F$, P=P_cd, h=h1)
+    h2 := h1 + (Enthalpy(F$, P=P_ev, s=s1) - h1)/eta_p
+    T2 := Temperature(F$, P=P_ev, h=h2)
+    j := 0
+    REPEAT
+      j := j + 1
+      h3 := h2 + q + eps_ev*(h_3max - h2 - q)
+      s3 := Entropy(F$, P=P_ev, h=h3)
+      h4 := h3 - eta_t*(h3 - Enthalpy(F$, P=P_cd, s=s3))
+      T4 := Temperature(F$, P=P_cd, h=h4)
+      q_nuevo := eps_rec*Min(h4 - Enthalpy(F$, P=P_cd, T=T2), Enthalpy(F$, P=P_ev, T=T4) - h2)
+      dq := abs(q_nuevo - q)
+      q := q_nuevo
+    UNTIL (dq < 1e-9) or (j > 500)
+    h4r := h4 - q
+    h1_nuevo := h4r - eps_cond*(h4r - h_1min)
+    dh := abs(h1_nuevo - h1)
+    h1 := h1_nuevo
+  UNTIL (dh < 1e-9) or (i > 500)
+END
+
+$UnitSystem SI Mass K kPa kJ
+
+F$ = 'Water'
+P_ev = 3000
+P_cd = 75
+T_fuente = 800.0
+T_sumidero = 300.0
+eps_ev = 0.8717278967063572
+eps_cond = 0.8813273091610422
+eta_t = 1.0
+eta_p = 1.0
+m = 1
+eps_rec = 0
+
+{ ===== Lazos: h1 y q_rec_kg (ver encabezado) ===== }
+CALL lazo(F$, P_ev, P_cd, T_fuente, T_sumidero, eps_ev, eps_cond, eps_rec, eta_t, eta_p : h[1], q_rec_kg)
+
+{ ===== Condensador (cierre B): estado 1 sale de eps_cond ===== }
+h_1min = Enthalpy(F$, P=P_cd, T=T_sumidero)
+res_h1 = h[1] - (h_4r - eps_cond*(h_4r - h_1min))
+T[1] = Temperature(F$, P=P_cd, h=h[1])
+s[1] = Entropy(F$, P=P_cd, h=h[1])
+
+{ ===== Bomba ===== }
+h_2s = Enthalpy(F$, P=P_ev, s=s[1])
+h[2] = h[1] + (h_2s - h[1])/eta_p
+T[2] = Temperature(F$, P=P_ev, h=h[2])
+s[2] = Entropy(F$, P=P_ev, h=h[2])
+
+{ ===== Recuperador (q_max del lado que limita, como recuperador.py) ===== }
+q_max = Min(h[4] - Enthalpy(F$, P=P_cd, T=T[2]), Enthalpy(F$, P=P_ev, T=T[4]) - h[2])
+res_rec = q_rec_kg - eps_rec*q_max
+h_2r = h[2] + q_rec_kg
+h_4r = h[4] - q_rec_kg
+
+{ ===== Evaporador (efectividad sobre el lado del fluido) ===== }
+h_3max = Enthalpy(F$, P=P_ev, T=T_fuente)
+h[3] = h_2r + eps_ev*(h_3max - h_2r)
+T[3] = Temperature(F$, P=P_ev, h=h[3])
+s[3] = Entropy(F$, P=P_ev, h=h[3])
+
+{ ===== Turbina ===== }
+h_4s = Enthalpy(F$, P=P_cd, s=s[3])
+h[4] = h[3] - eta_t*(h[3] - h_4s)
+T[4] = Temperature(F$, P=P_cd, h=h[4])
+x[4] = Quality(F$, P=P_cd, h=h[4])       { -100/100 fuera de la campana en EES }
+
+{ ===== Globales (las mismas definiciones de cycle_solver.py) ===== }
+Q_in = m*(h[3] - h_2r)
+Q_out = m*(h_4r - h[1])
+Q_rec = m*q_rec_kg
+W_t = m*(h[3] - h[4])
+W_p = m*(h[2] - h[1])
+W_net = W_t - W_p
+eta = W_net/Q_in
+dh_s = h[3] - h_4s
+N2 = abs(Q_in - Q_out - W_net)/Q_in
+
+$Export /A 'D:\Desktop\ORC\03_verificacion\ees\puntos\VP-01_salida.csv' W_net, W_t, W_p, Q_in, Q_out, Q_rec, eta, dh_s, T[1], T[2], T[3], T[4], x[4], res_h1, res_rec, N2

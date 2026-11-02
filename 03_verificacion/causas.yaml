@@ -1,0 +1,22 @@
+# Causas documentadas de las diferencias Python ↔ herramienta fuera de tolerancia (regla del plan §7:
+# fuera de tolerancia con causa = «explicado»; sin causa = «falla»). Cada causa dice cómo se comprobó.
+# Se aplica a las filas fuera de tolerancia de esa herramienta y esos puntos; «todos» = todos los puntos.
+EES:
+  todos: >-
+    EoS de EES distinta de CoolProp. Prueba V0 (2026-11-01): con las mismas entradas, la diferencia
+    de Q_in EES-Python es igual a la de Δh = h(P_ev,T_fuente) - h(P_cd,T_sumidero) calculada solo con
+    propiedades (p. ej. R152a +0,41 % y +0,41 %; MM +0,40 % y +0,33 %; T_sat del MM -0,83 K).
+    Los lazos de EES cierran (residuos < 1e-8).
+DWSIM-CoolProp:
+  todos: >-
+    Flash PH del paquete CoolProp de DWSIM en saturación. Prueba aislada (2026-11-01, n-butano,
+    933 kPa): con h de vapor saturado de CoolProp, DWSIM da fracción de vapor 0,990 (no 1) y la
+    expansión isentrópica 53,1 kJ/kg (CoolProp 37,2); con líquido saturado da 0,005 (no 0). Los
+    estados 1 y 3 de los papers son saturados. Comprobado solo para n-butano; en los demás fluidos
+    es inferido. VP-05 (estados fuera de la campana) coincide con Python en -0,04 % en W_net.
+DWSIM-PR:
+  todos: >-
+    EoS Peng-Robinson frente a CoolProp (sensibilidad a la EoS, tolerancia orientativa del §7).
+    No explica VP-06, VP-C-R134a ni VP-C-R152a: allí DWSIM-PR da errores de 350-550 % y η = 0,76
+    y 1,81 en R134a y R152a, sin sentido físico (fallo de la corrida, causa no buscada).
+  sin_causa: [VP-06, VP-C-R134a, VP-C-R152a]

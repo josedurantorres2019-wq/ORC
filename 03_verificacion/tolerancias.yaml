@@ -1,0 +1,19 @@
+# Tolerancias Python ↔ herramienta (plan de verificación §7, aprobadas por el usuario en V-D, 2026-11-01).
+# Bóveda: 04_PROJECTS/active/Ciclo ORC/plan/PLAN_VERIFICACION_ORC_2026-10-31.md § 7.
+# T en K (absoluta); energia = Q, W, Δh (relativa); eta en fracción (absoluta: 0,02 pp = 0,0002);
+# x = título de vapor (absoluta). Python ↔ paper usa las de cada caso en 01_referencias/casos/*.yaml.
+EES:
+  T: {tol: 0.1, tipo: abs}
+  energia: {tol: 0.001, tipo: rel}
+  eta: {tol: 0.0002, tipo: abs}
+  x: {tol: 0.001, tipo: abs}
+DWSIM-CoolProp:
+  T: {tol: 0.5, tipo: abs}
+  energia: {tol: 0.005, tipo: rel}
+  eta: {tol: 0.001, tipo: abs}
+  x: {tol: 0.005, tipo: abs}
+DWSIM-PR:
+  T: {tol: 3.0, tipo: abs}
+  energia: {tol: 0.03, tipo: rel}
+  eta: {tol: 0.005, tipo: abs}
+  x: {tol: 0.02, tipo: abs}
