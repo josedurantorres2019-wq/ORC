@@ -29,6 +29,8 @@ def main() -> None:
     ap.add_argument("--P_cd", type=float, required=True, help="presión del condensador [kPa]")
     ap.add_argument("--eps_cond", type=float, default=None,
                     help="efectividad del condensador; obligatoria si el YAML la tiene en null")
+    ap.add_argument("--eps_rec", type=float, default=None,
+                    help="efectividad del recuperador; sin ella queda apagado (YAML)")
     ap.add_argument("--caso", default="diseno", help="clave de `casos` (T_fuente, T_sumidero)")
     ap.add_argument("--guardar", action="store_true", help=f"agrega el punto a {RUTA.name}")
     ap.add_argument("--etiqueta", default=None, help="nombre libre de la corrida en el Excel")
@@ -39,6 +41,8 @@ def main() -> None:
     entradas = d.entradas_R(defs, caso=a.caso)
     if a.eps_cond is not None:
         entradas["eps_cond"] = a.eps_cond
+    if a.eps_rec is not None:
+        entradas["eps_rec"] = a.eps_rec
     if entradas["eps_cond"] is None:
         ap.error("eps_cond no está en definiciones.yaml: darla con --eps_cond")
     r = resolver_ciclo_R(backend, P_ev=a.P_ev, P_cd=a.P_cd, **entradas)
