@@ -1,0 +1,60 @@
+# Ampliación de la verificación sobre el código v1.0.0 (plan PLAN_VERIFICACION_AMPLIACION_v1.0.0,
+# familia F1, paso 1). Çengel y Boles, cap. 10: Ej. 10-3 (pp. 570-572) y Prob. 10-26 (p. 599).
+# PDF del usuario: Papers/CICLOS_DE_POTENCIA_DE_VAPOR_Y_COMBINADOS.pdf. Archivo nuevo: lo lee
+# scripts/comparar_verificacion.py (casos/*.yaml) sin cambiar el código.
+id: cengel_cap10_ampliacion
+cita: >-
+  Çengel, Y. A., y Boles, M. A. Termodinámica. Cap. 10, Ciclos de potencia de vapor y combinados
+  (edición en español).
+tipo: prueba de unidad (agua, ciclos Rankine ideales simples)
+
+# Tolerancias fijadas el 2026-11-02, antes de correr: las del §7 del plan (Çengel ±0,5 % en calores
+# y trabajos, ±0,2 pp en η) o media unidad de la última cifra publicada, la que sea mayor.
+# T_fuente y T_sumidero no los da el libro [supuesto]: solo fijan las ε equivalentes y no cambian
+# η ni q (el ciclo vuelve al estado del libro). T_fuente = 1000 K para quedar por encima de los
+# 600 °C del caso más caliente.
+verificacion:
+  - &ej103
+    id_punto: VP-16a
+    fluido: Water
+    T_fuente_degC: 726.85          # supuesto
+    T_sumidero_degC: 25            # supuesto
+    P_ev: {kPa: 3000}              # declarado
+    P_cd: {kPa: 10}                # declarado
+    estado_3: {T_degC: 350}        # declarado
+    estado_1: {q: 0}               # ciclo ideal: líquido saturado
+    eta_t: 1.0
+    eta_p: 1.0
+    m: {kg_s: 1}                   # por kg: q en kJ/kg = kW
+    comparar:
+      - {variable: Qin, valor_ref: 2921.3, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-3a, p. 571 (q_entrada por kg/s)"}
+      - {variable: Qout, valor_ref: 1944.3, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-3a, p. 571 (q_salida por kg/s)"}
+      - {variable: eta, valor_ref: 0.334, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Ej. 10-3a, p. 571"}
+  - <<: *ej103
+    id_punto: VP-16b
+    estado_3: {T_degC: 600}        # declarado: sobrecalentado a 600 °C
+    comparar:
+      - {variable: Qin, valor_ref: 3488.0, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-3b, p. 571"}
+      - {variable: Qout, valor_ref: 2188.5, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-3b, p. 571"}
+      - {variable: eta, valor_ref: 0.373, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Ej. 10-3b, p. 571"}
+  - <<: *ej103
+    id_punto: VP-16c
+    P_ev: {kPa: 15000}             # declarado: caldera a 15 MPa
+    estado_3: {T_degC: 600}
+    comparar:
+      - {variable: Qin, valor_ref: 3376.2, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-3c, p. 572"}
+      - {variable: Qout, valor_ref: 1923.5, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Ej. 10-3c, p. 572"}
+      - {variable: eta, valor_ref: 0.430, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Ej. 10-3c, p. 572"}
+  - <<: *ej103
+    id_punto: VP-17
+    P_ev: {kPa: 9000}              # declarado
+    P_cd: {kPa: 15}                # declarado
+    estado_3: {T_degC: 550}        # declarado
+    m: {desde_W_net_kW: 125000}    # derivado: 120 MW eléctricos / η_gen 0,96 (decisión A-2)
+    comparar:
+      # derivado (A-2): η_total 28,4 % = η_ciclo · 0,75 (caldera) · 0,96 (generador) → η_ciclo = 0,39444.
+      # Redondeo de 28,4 %: ±0,05 pp → ±0,0007 en η_ciclo, menor que ±0,002 del §7.
+      - {variable: eta, valor_ref: 0.39444, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Prob. 10-26, p. 599 (derivado de η_total = 28,4 %)"}
+      # derivado (A-2): Q_in = 51,9 t/h · 29 300 kJ/kg · 0,75 / 3,6 = 316 806 kW. Redondeo de 51,9:
+      # ±0,1 %, menor que ±0,5 % del §7.
+      - {variable: Qin, valor_ref: 316806, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-26, p. 599 (derivado del carbón, 51,9 t/h)"}
