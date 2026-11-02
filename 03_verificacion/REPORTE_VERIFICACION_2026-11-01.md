@@ -1,56 +1,93 @@
-# Verificación del código ORC contra los papers, EES y DWSIM (2026-11-01)
+# Verificación del código ORC contra los papers, EES y DWSIM
 
-> **El código reproduce los papers y EES reproduce al código.** El código pasa 25 de 29 comparaciones con los papers, 3 tienen la causa documentada y falla 1 (VP-05, W_net +0,67 %, igual en las tres herramientas). EES coincide con el código en W_net dentro de **0,5 %** en los 11 puntos, y toda la diferencia viene de sus propiedades, no de las ecuaciones. **DWSIM no sirve como verificación con estos puntos**: su flash falla justo en saturación (CoolProp) y da resultados sin sentido físico en 3 puntos (PR).
+*Corrida: 2026-11-01. Revisión de advertencias y fallas, y corrida final: 2026-11-02.*
 
-## Estado
+> **El código y EES reproducen los papers. Solo queda abierta una falla: VP-04 (Yari, R1234yf), con Ẇ_net −3,5 %.** Su origen está localizado en ṁ, pero su causa no se identificó. VP-05 quedó explicado: la diferencia está en las propiedades del isobutano del libro. Las desviaciones de DWSIM son de la herramienta y se probaron aisladas; no vienen del modelo ni de los datos.
+
+## Estado final
 
 | Herramienta | Puntos | Frente al paper | Frente al código | Veredicto |
 |---|---|---|---|---|
-| Código (Python + CoolProp) | 11 + VP-02 | 25 pasan, 3 explicadas, 1 falla | — | ✅ |
-| EES V10.228 | 11/11 | igual que el código (1 falla: VP-05) | 115 pasan, 44 explicadas por EoS, 0 sin causa | ✅ |
-| DWSIM 8.3.4, CoolProp | 11/11 | solo VP-01 y VP-05 cerca (≤ 0,6 %) | 86 pasan, 61 explicadas (flash), 13 fallan | ❌ |
-| DWSIM 8.3.4, Peng-Robinson | 10/11 (VP-04 da error) | 4 Yari dentro de ~1 %; R134a y R152a sin sentido | 94 pasan, 8 explicadas, 44 fallan | ⚠️ |
+| Código (Python + CoolProp) | 11 + VP-02 | 25 pasan, 4 explicadas, **1 falla (VP-04)** | — | ✅ |
+| EES V10.228 | 11/11 | igual que el código | 115 pasan, 44 explicadas por la EoS | ✅ |
+| DWSIM 8.3.4, CoolProp | 11/11 | solo VP-01, VP-05 y VP-06 cerca | falla en estados saturados | ❌ como verificación |
+| DWSIM 8.3.4, Peng-Robinson | 10/11 | n-butano, isobutano y amoníaco dentro de ~1 % | falla en la bomba con R134a, R152a, MM y R1234yf | ⚠️ parcial |
 
-## Riesgos y hallazgos
-
-1. **VP-05 (Çengel 10-29) falla en las tres herramientas.** Código +0,67 %, EES +0,51 %, DWSIM-CoolProp +0,63 %, con estados lejos de la saturación. Al coincidir motores independientes, la causa probable está en las entradas sacadas del libro (η_t derivada de T4 = 80 °C) o en el redondeo del libro. **No verificado.**
-2. **El flash PH del paquete CoolProp de DWSIM falla en saturación.** Con la h de vapor saturado de CoolProp, DWSIM da fracción de vapor 0,990 en vez de 1, y la expansión sale 53,1 kJ/kg contra 37,2. Los estados 1 y 3 de casi todos los papers son saturados. Comprobado solo con n-butano; para los demás fluidos es inferido.
-3. **DWSIM-PR da resultados sin sentido físico** en VP-06 (MM), VP-C-R134a (η = 0,76) y VP-C-R152a (η = 1,81), y falla con un error en VP-04 (R1234yf). La causa no se buscó.
-4. **Las diferencias entre EES y el código son de EoS.** En cada punto, la diferencia de Q_in es igual a la de Δh entre los dos reservorios calculada solo con propiedades (R152a +0,41 % y +0,41 %; MM +0,40 % y +0,33 %; T_sat del MM −0,83 K). Superan la tolerancia de ±0,1 % y ±0,1 K en MM, R152a y R1234yf.
+La corrida final reprodujo los resultados anteriores **sin ninguna diferencia** (0,0 en W_net) en EES y en los dos paquetes de DWSIM. Pruebas: 107 pasan, más el benchmark (`-m corrida`): 18 pasan y VP-04 queda como xfail estricto.
 
 ## Contra el paper: W_net (o W_el) en kW
 
 | Punto | Paper | Código | EES | DWSIM-CoolProp | DWSIM-PR |
 |---|---|---|---|---|---|
-| VP-03 n-butano (Yari) | 1450 | 1448,8 (−0,08 %) | 1450,1 (+0,01 %) | 2092,5 (+44 %) | 1449,3 (−0,05 %) |
-| VP-04 R1234yf (Yari) | 1816 | 1752,8 (−3,48 %)ᵃ | 1758,3 (−3,18 %)ᵃ | 2336,7 (+29 %) | error |
-| VP-C-isobutano (Yari) | 1479 | 1476,9 (−0,14 %) | 1476,6 (−0,16 %) | 165,7 (−89 %) | 1466,4 (−0,85 %) |
-| VP-C-propano (Yari) | 1635 | 1634,1 (−0,06 %) | 1632,1 (−0,18 %) | 1685,8 (+3,1 %) | 1573,3 (−3,8 %) |
-| VP-C-R134a (Yari) | 1448 | 1444,8 (−0,22 %) | 1444,8 (−0,22 %) | 2164,7 (+50 %) | 1821,8 (+26 %) |
-| VP-C-R152a (Yari) | 1476 | 1472,1 (−0,26 %) | 1477,8 (+0,12 %) | 1636,7 (+11 %) | 7506,2 (+409 %) |
-| VP-C-amoniaco (Yari) | 1377 | 1375,9 (−0,08 %) | 1376,0 (−0,07 %) | 1444,9 (+4,9 %) | 1390,3 (+0,97 %) |
-| VP-06 MM + recuperador (Bombarda), W_el | 1603 | 1603,6 (+0,04 %) | 1611,6 (+0,54 %) | 1622,8 (+1,2 %) | 1627,8 (+1,6 %)ᵇ |
-| VP-13 n-butano (Campos) | 32 | 31,00 (−3,1 %)ᵃ | 31,04 (−3,0 %)ᵃ | 36,06 (+13 %) | 30,94 (−3,3 %)ᵃ |
-| VP-05 isobutano (Çengel 10-29) | 6140 | 6181,1 (+0,67 %) | 6171,6 (+0,51 %) | 6178,6 (+0,63 %) | 6085,8 (−0,88 %) |
-| VP-01 agua (Çengel 10-1), η | 0,26 | 0,2602 (+0,08 %) | 0,2602 (+0,09 %) | 0,2610 (+0,40 %) | 0,2513 (−3,4 %) |
+| VP-03 Yari, n-butano | 1450 | −0,08 % | +0,01 % | +44 % | −0,05 % |
+| VP-C-isobutano (Yari) | 1479 | −0,14 % | −0,16 % | −89 % | −0,85 % |
+| VP-C-propano (Yari) | 1635 | −0,06 % | −0,18 % | +3,1 % | −3,8 % |
+| VP-C-R134a (Yari) | 1448 | −0,22 % | −0,22 % | +50 % | +26 % |
+| VP-C-R152a (Yari) | 1476 | −0,26 % | +0,12 % | +11 % | +409 % |
+| VP-C-amoniaco (Yari) | 1377 | −0,08 % | −0,07 % | +4,9 % | +0,97 % |
+| VP-06 Bombarda, MM + recuperador (W_el) | 1603 | +0,04 % | +0,54 % | +1,2 % | +1,6 % |
+| VP-01 Çengel 10-1, agua (η) | 0,26 | +0,08 % | +0,09 % | +0,40 % | −3,4 % |
+| VP-05 Çengel 10-29, isobutano | 6140 | +0,67 % ᵃ | +0,51 % ᵃ | +0,63 % ᵃ | −0,88 % |
+| VP-13 Campos, n-butano | 32 | −3,1 % ᵇ | −3,0 % ᵇ | +13 % | −3,3 % |
+| **VP-04 Yari, R1234yf** | 1816 | **−3,5 %** ᶜ | **−3,2 %** ᶜ | +29 % | error |
 
-ᵃ Causa documentada en el YAML del caso: VP-04, EoS de EES 2015 cerca de T_c; VP-13, los 32 kW de la tesis son potencia de turbina.
-ᵇ El W_el de VP-06 en PR queda cerca, pero Q_out sale +69 %: el punto no es válido.
+ᵃ Explicado (→ 1). ᵇ Los 32 kW de la tesis son la potencia de la turbina; el código da W_t = 32,47 kW (+1,5 %). ᶜ Falla abierta (→ 2).
+Todas las variables con su veredicto están en [`reporte_tablas.md`](reporte_tablas.md) y en [`comparacion_herramientas.csv`](comparacion_herramientas.csv).
 
-Todas las variables (η, Q_in, Q_out, Δh_s, ṁ) están en [`reporte_tablas.md`](reporte_tablas.md), y la tabla completa con errores y veredictos en [`comparacion_herramientas.csv`](comparacion_herramientas.csv).
+## Análisis de cada falla y advertencia
 
-## Comentario por herramienta
+### 1. VP-05 (Çengel 10-29): explicado por la EoS del libro
 
-- **Código.** Reproduce los ciclos publicados de los tres fluidos del proyecto (n-butano, R1234yf y MM con recuperador) dentro de tolerancia o con causa documentada. Solo queda abierto VP-05.
-- **EES.** Es una comprobación independiente de las ecuaciones y de las propiedades. Con las mismas entradas da el mismo ciclo; la diferencia máxima con el código es 0,49 % en energía y 1,47 K en T (MM), y sale íntegra de la EoS. Los lazos se iteran en un PROCEDURE de EES (sustitución sucesiva, como el código), porque un `.txt` no guarda valores iniciales y el sistema simultáneo no arranca desde 1. EES calcula los residuos de las ecuaciones originales del cierre, y todos dan < 1e-8.
-- **DWSIM.** El diagrama con bloques (Pump, Heater, Expander, Cooler y el lazo como Recycle) funciona. Donde los estados no están en saturación, coincide: VP-05 con CoolProp da −0,04 % en W_net frente al código. Con los puntos de los papers, que están en saturación, no es concluyente por el flash. Con PR, los 4 puntos de Yari que sí convergen bien quedan dentro de ~1 % del paper, lo esperable por cambiar de EoS.
+- El enunciado (p. 600, revisado en el PDF) **fija los dos estados de la turbina**: entrada a 3,25 MPa y 145 °C, salida a 400 kPa y 80 °C. Por eso w_t = h3 − h4 depende solo de las propiedades del isobutano; el modelo no interviene.
+- Con las respuestas del libro (6,14 MW y 105,5 kg/s), su w_t sale entre **63,9 y 64,1 kJ/kg**. CoolProp da 64,49 y EES V10 64,41. El libro usó las propiedades del EES de su edición.
+- El Q_in del código (50,39 MW) cae dentro del rango que implica el libro (50,1–50,6 MW), así que el balance de la fuente cuadra.
+- La causa quedó escrita en `01_referencias/casos/cengel_cap10.yaml`, con su evidencia.
 
-## Cómo se hizo
+### 2. VP-04 (Yari, R1234yf): falla abierta, localizada en ṁ
 
-- **Entradas:** las mismas del código, sacadas de los papers (`01_referencias/casos/*.yaml` → `entradas_puntos.csv`). Ninguna se escribió a mano.
-- **Sin exergía:** el estado muerto disponible venía del Kalina.
-- **Agua (VP-01):** `'Water'` en EES; en DWSIM, los paquetes CoolProp y PR, sin IAPWS.
-- **Tolerancias:** las del §7 del plan, aprobadas en V-D (`tolerancias.yaml`). Causas con su evidencia: `causas.yaml`.
-- **Comandos:** `python -m scripts.correr_ees`, `python -m scripts.correr_dwsim`, `python -m scripts.comparar_herramientas --guardar` (387 filas en la hoja `verificacion` del Excel).
+- **η coincide** (+0,05 pp, dentro de la tolerancia). Como W = η·Q_in, la diferencia está en Q_in, es decir, en ṁ.
+- Para dar 1816 kW, el ṁ de Yari tendría que ser 3,6 % mayor. Con las propiedades de CoolProp, eso equivale a un pinch de **9,1 K**; nuestro pinch cae en el punto de burbuja con 10,0 K, como dice el paper.
+- **La causa que estaba anotada («EoS de EES 2015») queda refutada.** EES V10 da −3,2 %, y su calor latente a 84 °C es 0,8 % **mayor** que el de CoolProp, en el sentido contrario al necesario.
+- Hipótesis no verificadas:
+  1. Yari usó otro valor de las propiedades del R1234yf cerca de su T_c (94,7 °C), donde el latente es solo de 70 kJ/kg.
+  2. Yari aplicó el pinch de otra forma para este fluido.
+- Queda como falla (xfail estricto en `tests/test_benchmark_papers.py`). La nota está en `yari2015_orc_tabla6.yaml`.
 
-*Fuente: corridas del 2026-11-01 con EES V10.228 Professional, DWSIM 8.3.4 y CoolProp (código). No verificado: la causa de VP-05 y la de los resultados sin sentido de DWSIM-PR. El fallo del flash de DWSIM se probó solo con n-butano.*
+### 3. DWSIM con CoolProp: falla en los estados saturados
+
+- **Prueba aislada, hecha toda dentro de DWSIM** (n-butano, 933 kPa): con vapor sobrecalentado, DWSIM da la misma h que CoolProp.
+- En cambio, el vapor saturado (definido por P y fracción de vapor = 1) sale 3,2 kJ/kg corrido, y la expansión isentrópica desde él da **53,6 kJ/kg**. CoolProp da 37,2 y DWSIM-PR 37,4.
+- En Yari, Bombarda y Campos la entrada a la turbina es vapor saturado y la de la bomba es líquido saturado. Por eso esos puntos salen mal.
+- Los que no tienen la entrada a la turbina saturada cuadran: VP-05 y VP-01.
+
+### 4. DWSIM con Peng-Robinson: falla en la bomba con algunos fluidos
+
+- **Prueba aislada de la bomba** (líquido 0,5 K subenfriado, de P_cd a P_ev):
+  - Con R134a, MM y R1234yf, T2 sale exactamente **298,15 K**, el valor por defecto de DWSIM: el flash no converge.
+  - Con R152a, w_p = 22,0 kJ/kg (CoolProp 1,8).
+  - Con n-butano sale bien.
+- Cambiar el algoritmo de flash (SingleCompFlash, NestedLoops) no lo corrige.
+- Donde la bomba funciona, PR queda a ~1 % del paper, lo esperable por cambiar de EoS.
+
+### 5. EES frente al código: solo la EoS
+
+- En cada punto, la diferencia de Q_in entre EES y el código es igual a la diferencia de Δh entre los reservorios calculada solo con propiedades. Ejemplos: R152a +0,41 % y +0,41 %; MM +0,40 % y +0,33 %; T_sat del MM −0,83 K.
+- Los lazos de EES cierran con residuos < 1e-8.
+
+## Pendientes
+
+1. VP-04: buscar en Yari (o en su versión de EES) qué propiedades o qué pinch usó para el R1234yf.
+2. DWSIM sirve solo para puntos sin estados saturados y con fluidos cuya bomba funciona en PR. Para verificar en DWSIM habría que definir puntos con sobrecalentamiento y subenfriamiento.
+3. EES: los lazos podrían resolverse de forma simultánea con `$VarInfo ... Guess=` en lugar del PROCEDURE, para verificar también el método numérico.
+
+## Archivos de soporte (para mostrar)
+
+| Carpeta | Contenido | Cómo abrirlo |
+|---|---|---|
+| `ees/archivos_ees/` | 11 archivos `.EES` ya resueltos, uno por punto | doble clic en EES; ventana Solution |
+| `ees/puntos/` | el mismo programa en texto (`.txt`) y su salida CSV | EES → Open, o cualquier editor |
+| `dwsim/puntos/` | 21 diagramas `.dwxmz` resueltos (`<punto>_coolprop` y `<punto>_pr`) | DWSIM → Open |
+
+En los `.dwxmz`, los calores de los Heater/Cooler quedaron fijos con el valor del lazo ya convergido. Si se recalcula en DWSIM, da el mismo estado. Las corrientes AUX son las auxiliares de la guía, a (P_ev, T_fuente) y (P_cd, T_sumidero).
+
+*Fuente: corridas del 2026-11-01 y del 2026-11-02 con EES V10.228 Professional, DWSIM 8.3.4 y CoolProp. Las entradas son las de `entradas_puntos.csv` (sacadas de cada paper). Revisé en los PDF el enunciado de Çengel 10-29 y la Tabla 6 de Yari. No verificado: la causa de VP-04 y por qué falla el flash de DWSIM.*

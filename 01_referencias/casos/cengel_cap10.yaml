@@ -73,5 +73,5 @@ verificacion:
     m: {flash: {m_pozo: 230, T_pozo_degC: 230, P_flash_kPa: 500, T_salida_degC: 90}}
     comparar:
       - {variable: m, valor_ref: 105.5, unidad: kg/s, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-29, p. 600"}
-      - {variable: Wnet, valor_ref: 6140, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-29, p. 600"}
+      - {variable: Wnet, valor_ref: 6140, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Çengel Prob. 10-29, p. 600", causa: "EoS del isobutano que usó el libro (EES de su edición). Los estados 3 (3,25 MPa; 145 °C) y 4 (400 kPa; 80 °C) los fija el enunciado, así que w_t = h3 − h4 solo depende de las propiedades: libro 63,9–64,1 kJ/kg (de 6,14 MW y 105,5 kg/s), CoolProp 64,49, EES V10 64,41. Q_in del código (50,39 MW) cae dentro del rango del libro (50,1–50,6 MW). Causa hallada el 2026-11-02 en la revisión de advertencias"}
       - {variable: eta, valor_ref: 0.122, unidad: "-", tolerancia: 0.002, tipo: abs, referencia: "Çengel Prob. 10-29, p. 600"}

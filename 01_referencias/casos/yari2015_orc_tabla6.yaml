@@ -102,8 +102,8 @@ verificacion:
     fluido: R1234yf
     P_ev: {T_sat_degC: 84}
     comparar:
-      - {variable: eta, valor_ref: 0.07787, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719", causa: "EoS de EES 2015 frente a CoolProp cerca de T_c (94,7 °C); verificación previa 2026-10-29"}
-      - {variable: Wnet, valor_ref: 1816, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719", causa: "EoS de EES 2015 frente a CoolProp cerca de T_c (94,7 °C); verificación previa 2026-10-29 (−3,5 %)"}
+      - {variable: eta, valor_ref: 0.07787, unidad: "-", tolerancia: 0.001, tipo: abs, referencia: "Yari 2015, Tabla 6, p. 719"}
+      - {variable: Wnet, valor_ref: 1816, unidad: kW, tolerancia: 0.005, tipo: rel, referencia: "Yari 2015, Tabla 6, p. 719", nota: "SIN CAUSA (2026-11-02). Localizada en ṁ: η coincide (+0,05 pp) y W = η·Q_in; el ṁ de Yari sería 3,6 % mayor, equivalente a un pinch de 9,1 K con CoolProp (con el nuestro el pinch cae en el punto de burbuja a 10,0 K). La causa anterior (EoS de EES 2015) queda refutada: EES V10 da −3,2 % y su calor latente a 84 °C es +0,8 % mayor que el de CoolProp, en sentido contrario"}
   - <<: *yari
     id_punto: VP-C-isobutano
     fluido: IsoButane

@@ -8,7 +8,9 @@ Resultado de la primera corrida: [`REPORTE_VERIFICACION_2026-11-01.md`](REPORTE_
 | `entradas_puntos.csv` | Entradas en modo R de cada punto (las mismas del Python, sacadas de los papers). Se regenera con `python -m scripts.comparar_verificacion --entradas 03_verificacion/entradas_puntos.csv` |
 | `ees/orc_modo_R.txt` | Programa base de EES (ecuaciones de D-15/D-16; lazos en el PROCEDURE `lazo`) |
 | `ees/puntos/` | Un programa de EES por punto y su salida (los genera `scripts/correr_ees.py`) |
-| `dwsim/GUIA_DWSIM.md` | Diagrama equivalente en DWSIM (lo arma `scripts/correr_dwsim.py`; `dwsim/puntos/*.dwxmz` se abren en DWSIM) |
+| `ees/archivos_ees/` | **Soporte:** los mismos puntos como archivos `.EES` ya resueltos, para abrirlos en EES |
+| `dwsim/GUIA_DWSIM.md` | Diagrama equivalente en DWSIM (lo arma `scripts/correr_dwsim.py`) |
+| `dwsim/puntos/` | **Soporte:** diagramas `.dwxmz` resueltos, uno por punto y paquete (CoolProp, PR), para abrirlos en DWSIM |
 | `tolerancias.yaml` | Tolerancias Python ↔ herramienta (§7 del plan, V-D) |
 | `causas.yaml` | Causas documentadas de las diferencias fuera de tolerancia, con su evidencia |
 | `comparacion_herramientas.csv`, `reporte_tablas.md` | Paper, código y herramientas por punto y variable (los genera `scripts/comparar_herramientas.py`) |

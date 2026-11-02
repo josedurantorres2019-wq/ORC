@@ -28,6 +28,7 @@ from src.properties.coolprop_adapter import CoolPropAdapter
 from src.verificacion import comparar
 
 from ._mapeo_papers import salidas
+from ._tablas_reporte import escribir_tablas
 from .comparar_verificacion import _puntos
 
 V = Path(__file__).resolve().parents[1] / "03_verificacion"
@@ -73,57 +74,26 @@ def _paper(punto: dict, val: dict, m: float) -> dict:
     return salidas(r, punto)
 
 
-def _causa_paper(c: dict, v_herr: float, v_py: float, tol_h: dict, causa_h: str | None):
+def _causa_paper(c: dict, v_herr: float, v_py: float, tol_h: dict, causa_h: str | None,
+                 codigo_pasa: bool):
     """La causa del caso (dato del paper, EoS de EES 2015, ...) explica a la herramienta si ella
     coincide con el código dentro de su tolerancia de energía; si no, hace falta además la causa
     documentada de su propia diferencia con el código (causas.yaml)."""
-    if not c.get("causa") or v_py == 0:
+    if v_py == 0:
         return None
     if abs(v_herr - v_py) / abs(v_py) <= tol_h["energia"]["tol"]:
-        return c["causa"]
-    return f"{c['causa']} | además, frente al código: {causa_h}" if causa_h else None
+        return c.get("causa") or (f"el código pasa frente al paper y la herramienta coincide con el "
+                                  f"código dentro de su tolerancia (±{100 * tol_h['energia']['tol']:g} %)"
+                                  if codigo_pasa else None)
+    if not causa_h or not (c.get("causa") or codigo_pasa):
+        return None
+    return f"{c['causa']} | además, frente al código: {causa_h}" if c.get("causa") else (
+        f"el código pasa frente al paper; la diferencia es de la herramienta: {causa_h}")
 
 
 def _causa_herr(causas: dict, h: str, pid: str) -> str | None:
     ca = causas.get(h, {})
     return None if pid in ca.get("sin_causa", []) else ca.get(pid, ca.get("todos"))
-
-
-def _fmt(v, err=None) -> str:
-    if v in (None, ""):
-        return "—"
-    s = f"{v:.5g}" if abs(v) >= 1 else f"{v:.5f}"
-    return s if err is None else f"{s} ({100 * err:+.2f} %)"
-
-
-def _markdown(tabla: list[dict]) -> None:
-    """Tablas del reporte: contra el paper (valor y error) y resumen Python ↔ herramienta."""
-    hs = list(HERRAMIENTAS)
-    L = ["## Contra el paper", "", "| Punto | Variable | Paper | Código | " + " | ".join(hs) + " |",
-         "|---|---|---|---|" + "---|" * len(hs)]
-    for t in (t for t in tabla if t["comparacion"] == "paper"):
-        e_py = (t["Python"] - t["paper"]) / abs(t["paper"])
-        L.append(f"| {t['id_punto']} | {t['variable']} | {_fmt(t['paper'])} | {_fmt(t['Python'], e_py)} | "
-                 + " | ".join(_fmt(t.get(h), t.get(f"err_{h}")) + (f" {t[f'ver_{h}']}" if f"ver_{h}" in t else "")
-                              for h in hs) + " |")
-    L += ["", "## Python ↔ herramienta (máximo error por punto)", "",
-          "| Punto | " + " | ".join(f"{h} máx ΔE (%) | {h} máx ΔT (K) | {h} fuera de tol."
-                                   for h in hs) + " |",
-          "|---|" + "---|" * (3 * len(hs))]
-    for pid in dict.fromkeys(t["id_punto"] for t in tabla):
-        fila = [pid]
-        for h in hs:
-            rows = [t for t in tabla if t["id_punto"] == pid and t["comparacion"] == "Python" and h in t]
-            if not rows:
-                fila += ["—"] * 3
-                continue
-            eE = [abs(r[f"err_{h}"]) * 100 for r in rows if VARIABLES[r["variable"]][0] == "energia"]
-            eT = [abs(r[f"err_{h}"]) for r in rows if VARIABLES[r["variable"]][0] == "T"]
-            nf = sum(r[f"ver_{h}"] != "pasa" for r in rows)
-            fila += [f"{max(eE):.2f}", f"{max(eT):.2f}", f"{nf}/{len(rows)}"]
-        L.append("| " + " | ".join(fila) + " |")
-    (V / "reporte_tablas.md").write_text(chr(10).join(L) + chr(10), encoding="utf-8")
-    print(f"Tablas: {V / 'reporte_tablas.md'}")
 
 
 def main() -> None:
@@ -143,6 +113,9 @@ def main() -> None:
         sal_py = salidas(r, casos[pid])
         for c in casos[pid]["comparar"]:
             v = c["variable"]
+            py_pasa = comparar(id_punto=pid, nivel="V3", herramienta="paper", referencia="",
+                               variable=v, unidad="", valor_ref=c["valor_ref"], valor_python=sal_py[v],
+                               tolerancia=c["tolerancia"], tipo_tolerancia=c["tipo"])["veredicto"] == "pasa"
             fila_t = {"id_punto": pid, "comparacion": "paper", "variable": v,
                       "unidad": c["unidad"], "paper": c["valor_ref"], "Python": sal_py[v]}
             for h in HERRAMIENTAS:
@@ -152,7 +125,7 @@ def main() -> None:
                                  valor_ref=c["valor_ref"], valor_python=sal[v],
                                  tolerancia=c["tolerancia"], tipo_tolerancia=c["tipo"],
                                  causa=_causa_paper(c, sal[v], sal_py[v], tol[h],
-                                                    _causa_herr(causas, h, pid)))
+                                                    _causa_herr(causas, h, pid), py_pasa))
                     fila_t[h], fila_t[f"err_{h}"], fila_t[f"ver_{h}"] = sal[v], k["error_rel"], k["veredicto"]
             tabla.append(fila_t)
         # 2) Python ↔ herramienta, todas las variables, tolerancias del §7
@@ -189,7 +162,7 @@ def main() -> None:
         print(h, {c: vs.count(c) for c in ("pasa", "explicado", "falla")},
               f"({len({t['id_punto'] for t in tabla if f'ver_{h}' in t})} puntos)")
     print(f"Tabla: {V / 'comparacion_herramientas.csv'}")
-    _markdown(tabla)
+    escribir_tablas(tabla, list(HERRAMIENTAS), VARIABLES, V / "reporte_tablas.md")
     if a.guardar and excel:
         agregar_verificacion(excel)
         print(f"{len(excel)} filas Python ↔ herramienta en la hoja verificacion")

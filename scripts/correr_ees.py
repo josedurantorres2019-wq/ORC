@@ -8,6 +8,8 @@ Cada programa sale de `03_verificacion/ees/orc_modo_R.txt` (las ecuaciones, sin 
 entradas de una fila de `03_verificacion/entradas_puntos.csv`. EES se lanza con
 ``EES.exe <programa> /solve /nosplash``: resuelve, escribe su CSV con ``$Export`` y se cierra.
 Los CSV de cada punto se juntan en `03_verificacion/ees/resultados_ees.csv` (columnas del README).
+Después, una macro de EES (Open, Solve, Save, Quit) guarda cada punto resuelto como archivo nativo
+en `03_verificacion/ees/archivos_ees/<id>.EES`, para abrirlo y mostrarlo en EES.
 """
 
 from __future__ import annotations
@@ -107,6 +109,29 @@ def correr(prog: Path, out: Path, espera: float = 120.0) -> tuple[bool, str]:
     return out.exists(), ("avisos de EES" if avisos else "") + (f" ventanas: {otras}" if otras else "")
 
 
+def guardar_ees(prog: Path, destino: Path, espera: float = 120.0) -> bool:
+    """Abre el programa en EES con una macro, lo resuelve y lo guarda como .EES.
+
+    Un intento de cada once falló sin mensaje en la corrida del 2026-11-02 y el segundo funcionó:
+    por eso se reintenta una vez.
+    """
+    destino.unlink(missing_ok=True)
+    macro = destino.with_suffix(".emf")
+    lineas = [f"Open '{prog}'", "Solve", f"Save '{destino}'", "Quit", ""]
+    macro.write_text(chr(10).join(lineas), encoding="latin-1")
+    for _ in range(2):
+        p = subprocess.Popen([str(EES), str(macro)])
+        try:
+            p.wait(espera)
+        except subprocess.TimeoutExpired:
+            p.kill()
+        if destino.exists():
+            break
+    macro.unlink(missing_ok=True)
+    (destino.parent / "EESMacro.log").unlink(missing_ok=True)
+    return destino.exists()
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -127,7 +152,10 @@ def main() -> None:
         val = dict(zip(EXPORTA, _leer_csv_ees(out)))
         filas.append({"id_punto": pid, **{k.replace("[", "").replace("]", ""): x
                                           for k, x in val.items()}, "nota_ees": nota.strip()})
-        print(f"{pid}: W_net={val['W_net']:.2f} kW  eta={val['eta']:.5f}  {nota}", flush=True)
+        (DIR / "archivos_ees").mkdir(exist_ok=True)
+        ees = guardar_ees(prog, DIR / "archivos_ees" / f"{pid}.EES")
+        print(f"{pid}: W_net={val['W_net']:.2f} kW  eta={val['eta']:.5f}  {nota}"
+              f"{'' if ees else '  (no se guardó el .EES)'}", flush=True)
     if filas:
         with SALIDA.open("w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=list(filas[0]))

@@ -8,7 +8,7 @@ Sigue `03_verificacion/dwsim/GUIA_DWSIM.md` con las entradas de `entradas_puntos
 código, sacadas de los papers). Los calores de Heater/Cooler salen de las ε con dos corrientes
 auxiliares a (P_ev, T_fuente) y (P_cd, T_sumidero), como la Spreadsheet de la guía; los lazos (h1 y
 q_rec) se cierran recalculando el diagrama, como un Recycle. Propiedades: solo las del paquete de
-DWSIM. Salidas: `dwsim/puntos/<id>_<paquete>.dwxmz` y `dwsim/resultados_dwsim_<paquete>.csv`.
+DWSIM. Salidas: `dwsim/puntos/<id>_<paquete>.dwxmz` (resuelto) y `dwsim/resultados_dwsim_<paq>.csv`.
 """
 
 from __future__ import annotations
@@ -28,6 +28,11 @@ COMPUESTO = {"MM": "MM", "n-Butane": "N-butane", "Water": "Water", "IsoButane": 
              "R1234yf": "R1234yf", "Propane": "Propane", "R134a": "R134a", "R152a": "R152A",
              "Ammonia": "Ammonia"}
 TOL_H, MAX_ITER = 1e-6, 300                 # kJ/kg, como el Recycle con tolerancia estrecha
+POS = {"S1": (60, 420), "BOMBA": (160, 420), "S2": (260, 420), "REC-FRIO": (360, 420), "S2r": (460, 420),
+       "EVAPORADOR": (560, 300), "S3": (660, 180), "EXPANSOR": (760, 180), "S4": (860, 180),
+       "REC-CALIENTE": (860, 300), "S4r": (860, 420), "CONDENSADOR": (760, 560), "S1c": (60, 560),
+       "AUXev": (560, 100), "AUXcd": (760, 680), "AUX2": (360, 680), "AUX4": (460, 100),
+       "Ep": (160, 520), "Erf": (360, 520), "Eev": (480, 300), "Et": (860, 80), "Erc": (960, 300), "Ecd": (860, 560)}
 
 
 def _cargar_dwsim():
@@ -55,8 +60,7 @@ class Ciclo:
         self.fs = fs = auto.CreateFlowsheet()
         fs.AddCompound(COMPUESTO[fila["fluido_coolprop"]])
         fs.CreateAndAddPropertyPackage(PAQUETES[paquete])
-        x = iter(range(0, 4000, 120))
-        mk = lambda tipo, nombre: fs.AddObject(tipo, next(x), 0, nombre).GetAsObject()  # noqa: E731
+        mk = lambda tipo, n: fs.AddObject(tipo, *POS[n], n).GetAsObject()  # noqa: E731
         s = {n: mk(T.MaterialStream, n) for n in ("S1", "S2", "S2r", "S3", "S4", "S4r", "S1c",
                                                   "AUXev", "AUXcd", "AUX2", "AUX4")}
         e = {n: mk(T.EnergyStream, n) for n in ("Ep", "Erf", "Eev", "Et", "Erc", "Ecd")}
@@ -73,15 +77,12 @@ class Ciclo:
             a, b = (e[en], u[uo]) if entra_energia else (u[uo], e[en])
             fs.ConnectObjects(a.GraphicObject, b.GraphicObject, -1, -1)
         self.s, self.u = s, u
-        f = {k: float(v) if v else None for k, v in fila.items() if k not in ("id_punto", "fluido_coolprop")}
-        self.f = f
+        self.f = f = {k: float(v) if v else None for k, v in fila.items() if k not in ("id_punto", "fluido_coolprop")}
         self.P_ev, self.P_cd = f["P_ev"] * 1e3, f["P_cd"] * 1e3          # Pa
-        u["bomba"].CalcMode = U.Pump.CalculationMode.OutletPressure
-        u["bomba"].Pout = self.P_ev
-        u["bomba"].Eficiencia = 100.0 * f["eta_p"]
-        u["turb"].CalcMode = U.Expander.CalculationMode.OutletPressure
-        u["turb"].POut = self.P_cd
-        u["turb"].AdiabaticEfficiency = 100.0 * f["eta_t"]   # DWSIM la pide en %
+        u["bomba"].CalcMode, u["bomba"].Pout = U.Pump.CalculationMode.OutletPressure, self.P_ev
+        u["bomba"].Eficiencia = 100.0 * f["eta_p"]                          # DWSIM la pide en %
+        u["turb"].CalcMode, u["turb"].POut = U.Expander.CalculationMode.OutletPressure, self.P_cd
+        u["turb"].AdiabaticEfficiency = 100.0 * f["eta_t"]                  # DWSIM la pide en %
         for k, modo in (("rec_f", U.Heater.CalculationMode.HeatAdded), ("evap", U.Heater.CalculationMode.HeatAdded),
                         ("rec_c", U.Cooler.CalculationMode.HeatRemoved), ("cond", U.Cooler.CalculationMode.HeatRemoved)):
             u[k].CalcMode, u[k].DeltaP, u[k].Eficiencia = modo, 0.0, 100.0
@@ -110,7 +111,6 @@ class Ciclo:
         if err is not None and len(err) > 0:
             raise RuntimeError("; ".join(str(x.Message) for x in err))
 
-    # -- lazo (Recycle + Spreadsheet de la guía) ---------------------------------------------
     def resolver(self) -> dict:
         f, U = self.f, self.u
         eps_rec = f["eps_rec"] or 0.0

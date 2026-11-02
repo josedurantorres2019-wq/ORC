@@ -4,9 +4,10 @@ Corre cada punto del bloque `verificacion` de `01_referencias/casos/*.yaml` con 
 exige que ninguna comparación quede en «falla» (pasa, o explicada con causa documentada).
 Marcada `corrida`: solo con orden del usuario (`pytest -m corrida`).
 
-VP-05 (Çengel 10-29, isobutano) queda como xfail estricto: Ẇ_net sale +0,67 % (tolerancia
-0,5 %) y la causa probable, la EoS del isobutano en el EES del libro, falta confirmarla en EES.
-Si un día pasa, la prueba avisa (strict) para quitar la marca.
+VP-04 (Yari, R1234yf) queda como xfail estricto: Ẇ_net sale −3,5 % (tolerancia 0,5 %); la
+diferencia está en ṁ, pero su causa no está identificada (la de la EoS de EES 2015 se refutó el
+2026-11-02). VP-05 salió de la lista ese día: su causa (EoS del isobutano del libro) quedó
+documentada en el YAML. Si un pendiente pasa, la prueba avisa (strict) para quitar la marca.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ from scripts.comparar_verificacion import _corrida, _filas, _puntos
 
 pytestmark = pytest.mark.corrida
 
-PENDIENTES = {"VP-05": "Ẇ_net +0,67 %: causa probable la EoS de EES del libro; confirmar en EES"}
+PENDIENTES = {"VP-04": "Ẇ_net −3,5 %: diferencia en ṁ (pinch/propiedades cerca de T_c); causa sin identificar"}
 PUNTOS = list(_puntos())
 
 

@@ -1,6 +1,7 @@
 # Causas documentadas de las diferencias Python ↔ herramienta fuera de tolerancia (regla del plan §7:
 # fuera de tolerancia con causa = «explicado»; sin causa = «falla»). Cada causa dice cómo se comprobó.
 # Se aplica a las filas fuera de tolerancia de esa herramienta y esos puntos; «todos» = todos los puntos.
+# Revisado el 2026-11-02 con pruebas aisladas (scripts en el reporte, § Cómo se comprobó).
 EES:
   todos: >-
     EoS de EES distinta de CoolProp. Prueba V0 (2026-11-01): con las mismas entradas, la diferencia
@@ -9,14 +10,18 @@ EES:
     Los lazos de EES cierran (residuos < 1e-8).
 DWSIM-CoolProp:
   todos: >-
-    Flash PH del paquete CoolProp de DWSIM en saturación. Prueba aislada (2026-11-01, n-butano,
-    933 kPa): con h de vapor saturado de CoolProp, DWSIM da fracción de vapor 0,990 (no 1) y la
-    expansión isentrópica 53,1 kJ/kg (CoolProp 37,2); con líquido saturado da 0,005 (no 0). Los
-    estados 1 y 3 de los papers son saturados. Comprobado solo para n-butano; en los demás fluidos
-    es inferido. VP-05 (estados fuera de la campana) coincide con Python en -0,04 % en W_net.
+    Falla del paquete CoolProp de DWSIM en estados saturados. Prueba aislada hecha toda dentro de
+    DWSIM (2026-11-02, n-butano, 933 kPa): con vapor sobrecalentado DWSIM da la misma h que CoolProp,
+    pero el vapor saturado (P, VF = 1) sale 3,2 kJ/kg corrido y la expansión isentrópica desde él da
+    53,6 kJ/kg (CoolProp 37,2; DWSIM-PR 37,4). Los estados 1 y 3 de los papers son saturados.
+    VP-05 y VP-01 (sin estados saturados a la entrada de la turbina) coinciden con Python.
 DWSIM-PR:
   todos: >-
     EoS Peng-Robinson frente a CoolProp (sensibilidad a la EoS, tolerancia orientativa del §7).
-    No explica VP-06, VP-C-R134a ni VP-C-R152a: allí DWSIM-PR da errores de 350-550 % y η = 0,76
-    y 1,81 en R134a y R152a, sin sentido físico (fallo de la corrida, causa no buscada).
-  sin_causa: [VP-06, VP-C-R134a, VP-C-R152a]
+  VP-06: &bomba_pr >-
+    Falla del flash PH de DWSIM-PR a la salida de la bomba. Prueba aislada (2026-11-02, líquido
+    0,5 K subenfriado a P_cd bombeado a P_ev): con R134a, MM y R1234yf T2 sale 298,15 K (el valor
+    por defecto de DWSIM: el flash no converge) y con R152a w_p = 22,0 kJ/kg (CoolProp 1,8); con
+    n-butano sale bien. Cambiar el algoritmo de flash (SingleCompFlash, NestedLoops) no lo corrige.
+  VP-C-R134a: *bomba_pr
+  VP-C-R152a: *bomba_pr
